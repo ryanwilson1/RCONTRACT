@@ -1328,8 +1328,26 @@ if (typeof supabase === 'undefined') {
   throw new Error('Supabase não carregou')
 }
 const { createClient } = supabase
+// ── Cliente Supabase com armazenamento resiliente ──
+// Usa localStorage quando disponível; se o navegador bloquear (Tracking Prevention,
+// iframe/preview, modo restrito), cai para memória — assim a sessão continua válida
+// dentro da aba e o token vai junto nas requisições (o RLS 'authenticated' passa).
+const _memStore = {}
+function _rcStorage() {
+  try {
+    const k = '__rc_probe__'
+    localStorage.setItem(k, '1'); localStorage.removeItem(k)
+    return localStorage
+  } catch (_) {
+    return {
+      getItem: (k) => (k in _memStore ? _memStore[k] : null),
+      setItem: (k, v) => { _memStore[k] = String(v) },
+      removeItem: (k) => { delete _memStore[k] },
+    }
+  }
+}
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true }
+  auth: { persistSession: true, autoRefreshToken: true, storage: _rcStorage() }
 })
 
 // ── Padronização: tudo que é digitado no sistema vira MAIÚSCULA ──
