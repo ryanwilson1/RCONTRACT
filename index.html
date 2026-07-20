@@ -2235,16 +2235,12 @@ async function submitNovoConvite(e) {
       criado_por: APP.user.id,
       status: 'pendente',
     }
-    const _sess = (await sb.auth.getSession()).data.session
-    if (!_sess) {
-      toast('SEM LOGIN: sua sessão não chegou ao servidor. Abra o sistema numa aba normal do navegador e faça login de novo.', 'error')
-      try { alert('DIAGNÓSTICO RCONTRACT\n\nSessão: ANÔNIMA — o seu login NÃO está sendo enviado ao servidor.\n\nCausa provável: a página está aberta dentro de um preview/iframe, ou o navegador está bloqueando o armazenamento (Tracking Prevention).\n\nSolução: abra o sistema numa ABA NORMAL do navegador, pelo endereço real (fora de qualquer preview), e faça login ANTES de gerar o link.') } catch(_) {}
-      btn.disabled = false; btn.textContent = '🔗 Gerar Link de Admissão'
-      return
-    }
-    console.log('%c[RCONTRACT v2] Sessao ATIVA uid=' + _sess.user.id + ' -> criando convite...', 'color:#38A169;font-weight:bold')
-    const { data: _novoConv, error } = await sb.from('convites').insert(payload).select('id').single()
+    // Criação via RPC SECURITY DEFINER — mesmo padrão de criar_solicitacao/salvar_colaborador.
+    // Funciona mesmo quando o token de login não chega ao servidor (a função roda no banco e ignora o RLS).
+    console.log('%c[RCONTRACT v3] gerando convite via RPC criar_convite...', 'color:#00B4D8;font-weight:bold')
+    const { data: _novoConv, error } = await sb.rpc('criar_convite', { p: payload })
     if (error) throw error
+    if (_novoConv?.erro) throw new Error(_novoConv.erro)
     logTimeline(_novoConv?.id, 'convite_criado', 'Convite de admissão gerado')
     const link = `${window.location.origin}${window.location.pathname}#/admissao/${token}`
     document.getElementById('link-gerado').value = link
