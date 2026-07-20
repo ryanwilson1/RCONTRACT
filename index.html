@@ -1349,6 +1349,7 @@ function _rcStorage() {
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, storage: _rcStorage() }
 })
+console.log('%c[RCONTRACT] versao AUTH-FIX v2 carregada', 'color:#00B4D8;font-weight:bold;font-size:14px')
 
 // ── Padronização: tudo que é digitado no sistema vira MAIÚSCULA ──
 // Exceções: e-mail, senha, número, data/hora e campos marcados com a classe "no-upper".
@@ -2234,6 +2235,14 @@ async function submitNovoConvite(e) {
       criado_por: APP.user.id,
       status: 'pendente',
     }
+    const _sess = (await sb.auth.getSession()).data.session
+    if (!_sess) {
+      toast('SEM LOGIN: sua sessão não chegou ao servidor. Abra o sistema numa aba normal do navegador e faça login de novo.', 'error')
+      try { alert('DIAGNÓSTICO RCONTRACT\n\nSessão: ANÔNIMA — o seu login NÃO está sendo enviado ao servidor.\n\nCausa provável: a página está aberta dentro de um preview/iframe, ou o navegador está bloqueando o armazenamento (Tracking Prevention).\n\nSolução: abra o sistema numa ABA NORMAL do navegador, pelo endereço real (fora de qualquer preview), e faça login ANTES de gerar o link.') } catch(_) {}
+      btn.disabled = false; btn.textContent = '🔗 Gerar Link de Admissão'
+      return
+    }
+    console.log('%c[RCONTRACT v2] Sessao ATIVA uid=' + _sess.user.id + ' -> criando convite...', 'color:#38A169;font-weight:bold')
     const { data: _novoConv, error } = await sb.from('convites').insert(payload).select('id').single()
     if (error) throw error
     logTimeline(_novoConv?.id, 'convite_criado', 'Convite de admissão gerado')
