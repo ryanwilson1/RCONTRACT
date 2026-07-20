@@ -1349,7 +1349,8 @@ function _rcStorage() {
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, storage: _rcStorage() }
 })
-console.log('%c[RCONTRACT] versao AUTH-FIX v2 carregada', 'color:#00B4D8;font-weight:bold;font-size:14px')
+console.log('%c[RCONTRACT] VERSAO 8 carregada', 'color:#00B4D8;font-weight:bold;font-size:16px')
+setTimeout(() => { try { toast('✅ RCONTRACT v8 — rastreio de abertura + auto-save à prova de queda', 'success') } catch(_){} }, 1200)
 
 // ── Padronização: tudo que é digitado no sistema vira MAIÚSCULA ──
 // Exceções: e-mail, senha, número, data/hora e campos marcados com a classe "no-upper".
@@ -2022,7 +2023,7 @@ async function loadAdmissoesTable() {
     <table>
       <thead><tr>
         <th>Candidato</th><th>Função</th><th>Unidade</th><th>Admissão</th>
-        <th>Status</th><th>Progresso</th><th>Validade</th><th>Ações</th>
+        <th>Envio / Abertura</th><th>Status</th><th>Progresso</th><th>Validade</th><th>Ações</th>
       </tr></thead>
       <tbody>
         ${(data||[]).map(c => {
@@ -2037,6 +2038,10 @@ async function loadAdmissoesTable() {
             <td style="font-size:13px;">${c.funcao||'—'}</td>
             <td style="font-size:13px;">${c.obra_unidade||'—'}</td>
             <td style="font-size:12px;font-family:var(--mono);">${c.data_admissao_prevista ? formatDate(c.data_admissao_prevista) : '—'}</td>
+            <td style="font-size:11px;font-family:var(--mono);white-space:nowrap;">
+              <div style="color:var(--gray600);">📤 ${c.created_at ? formatDate(c.created_at) : '—'}</div>
+              <div style="color:${c.aberto_em ? 'var(--success)' : 'var(--gray400)'};">${c.aberto_em ? '👁 ' + formatDate(c.aberto_em) : 'não abriu'}</div>
+            </td>
             <td>${statusBadge(c.status)}</td>
             <td>
               <div style="min-width:80px;">
@@ -2055,7 +2060,7 @@ async function loadAdmissoesTable() {
               </div>
             </td>
           </tr>`
-        }).join('') || '<tr><td colspan="8"><div class="empty-state" style="padding:24px"><div class="e-icon">🔍</div><div class="empty-title">Nenhum resultado</div></div></td></tr>'}
+        }).join('') || '<tr><td colspan="9"><div class="empty-state" style="padding:24px"><div class="e-icon">🔍</div><div class="empty-title">Nenhum resultado</div></div></td></tr>'}
       </tbody>
     </table>`
 
@@ -2327,6 +2332,16 @@ function renderFormSolicitacao() {
             <input type="text" name="local_obra" required placeholder="Ex: SABESP Barueri">
           </div>
         </div>
+        <div class="input-group">
+          <div class="field">
+            <label>Seu E-mail (Requisitante) *</label>
+            <input type="email" name="requisitante_email" required placeholder="seu.email@empresa.com">
+          </div>
+          <div class="field">
+            <label>Seu Telefone (Requisitante)</label>
+            <input type="text" id="sol-input-tel-req" name="requisitante_telefone" placeholder="(11) 99999-9999">
+          </div>
+        </div>
 
         <div class="divider"></div>
         <div class="section-label">💼 Vaga e Profissional Indicado</div>
@@ -2423,6 +2438,7 @@ function renderFormSolicitacao() {
     </div>
   </div>`
   applyMask(document.getElementById('sol-input-tel'), 'telefone')
+  applyMask(document.getElementById('sol-input-tel-req'), 'telefone')
   document.getElementById('sol-input-salario').addEventListener('input', e => {
     const n = e.target.value.replace(/\D/g,'')
     const f = (parseInt(n||0)/100).toFixed(2)
@@ -2503,6 +2519,8 @@ async function submitSolicitacao(e) {
 
     const payload = {
       requisitante: fd.get('requisitante') || '',
+      requisitante_email: (fd.get('requisitante_email') || '').trim().toLowerCase() || null,
+      requisitante_telefone: fd.get('requisitante_telefone') || null,
       local_obra: fd.get('local_obra') || '',
       funcao: fd.get('funcao') || '',
       nome_indicado: fd.get('nome_indicado') || '',
@@ -2652,6 +2670,10 @@ async function abrirDetalheSolicitacao(id) {
       <div class="input-group">
         <div class="field"><label>Requisitante</label><div>${s.requisitante}</div></div>
         <div class="field"><label>Local / Obra</label><div>${s.local_obra}</div></div>
+      </div>
+      <div class="input-group">
+        <div class="field"><label>E-mail do Requisitante</label><div>${s.requisitante_email || '—'}</div></div>
+        <div class="field"><label>Telefone do Requisitante</label><div>${s.requisitante_telefone ? formatPhone(s.requisitante_telefone) : '—'}</div></div>
       </div>
       <div class="input-group">
         <div class="field"><label>Função</label><div>${s.funcao}</div></div>
@@ -2873,7 +2895,7 @@ async function confirmarAprovarSolicitacao() {
     const sigPath = await uploadAssinatura(_sigAprov, _solAtual.id, 'aprovador')
     const token = Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(16).padStart(2,'0')).join('')
     const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString()
-    const { data: convite, error: errConvite } = await sb.from('convites').insert({
+    const { data: convite, error: errConvite } = await sb.rpc('criar_convite', { p: {
       token,
       candidato_nome: sanitizar(nome),
       candidato_email: email,
@@ -2886,8 +2908,9 @@ async function confirmarAprovarSolicitacao() {
       criado_por: APP.user.id,
       status: 'pendente',
       solicitacao_id: _solAtual.id,
-    }).select().single()
+    }})
     if (errConvite) throw errConvite
+    if (convite?.erro) throw new Error(convite.erro)
 
     const { error: errSol } = await sb.from('solicitacoes_contratacao').update({
       status: 'aprovada',
@@ -4830,12 +4853,12 @@ async function renderEtapa7(container) {
         <div id="foto-preview-wrap" style="margin-bottom:16px;">
           ${fotoPreviewHtml}
         </div>
-        <input type="file" id="foto-input" accept="image/*,application/pdf" capture="user" style="display:none" onchange="previewFoto(event)">
+        <input type="file" id="foto-input" accept="image/*,application/pdf" style="display:none" onchange="previewFoto(event)">
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
           <button class="btn btn-outline" onclick="document.getElementById('foto-input').click()">📷 Tirar Foto / Galeria</button>
           ${APP.dadosCandidato.foto_path ? `<button class="btn btn-ghost" onclick="removerFoto()">✕ Remover</button>` : ''}
         </div>
-        <p style="font-size:11px;color:var(--gray400);margin-top:12px;">Foto frente, boa iluminação. JPG, PNG ou PDF, máx. 10MB.</p>
+        <p style="font-size:11px;color:var(--gray400);margin-top:12px;">Foto de frente, boa iluminação. Pode ser foto do celular (JPG, PNG, HEIC) ou PDF, máx. 10MB.</p>
         ${botoesNavegacao(7, 'salvarEtapa7()')}
       </div>
     </div>
@@ -4846,8 +4869,7 @@ function previewFoto(e) {
   const file = e.target.files[0]
   if (!file) return
   if (file.size > 10 * 1024 * 1024) { toast('Arquivo muito grande. Máx 10MB.', 'error'); return }
-  const allowedTypes = ['image/jpeg','image/jpg','image/png','image/webp','application/pdf']
-  if (!allowedTypes.includes(file.type)) { toast('Tipo inválido. Use JPG, PNG ou PDF.', 'error'); return }
+  if (!arquivoAceito(file)) { toast('Formato não aceito. Use foto do celular (JPG/PNG/HEIC) ou PDF.', 'error'); return }
   APP._fotoFile = file
   if (file.type === 'application/pdf') {
     const wrap = document.getElementById('foto-preview-wrap')
@@ -4877,7 +4899,7 @@ async function salvarEtapa7() {
     const btn7 = document.getElementById('btn-avancar-7')
     if (btn7) { btn7.disabled = true; btn7.textContent = 'Enviando...' }
     try {
-      const isPdf = APP._fotoFile.type === 'application/pdf'
+      const isPdf = APP._fotoFile.type === 'application/pdf' || /\.pdf$/i.test(APP._fotoFile.name || '')
       let fileToUpload = APP._fotoFile
       const ext = isPdf ? 'pdf' : 'jpg'
       if (!isPdf) {
@@ -4959,8 +4981,8 @@ async function renderEtapa8(container) {
                   ${uploaded.status==='aprovado'?'✅ Aprovado':uploaded.status==='reprovado'?'❌ Reprovado':'⏳ Aguardando revisão'}
                   ${uploaded.status==='reprovado' && uploaded.motivo_reprovacao ? `<span style="font-size:9px;display:block;margin-top:2px;">${uploaded.motivo_reprovacao}</span>` : ''}
                 </div>
-                ${uploaded.status==='reprovado' ? `<input type="file" id="reupload-${t.key}" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="uploadDoc('${t.key}','${categ}',event)"><button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px;margin-top:3px;background:#FEE2E2;color:#991B1B;" onclick="document.getElementById('reupload-${t.key}').click()">↩ Reenviar</button>` : ''}`
-              : `<input type="file" id="upload-${t.key}" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="uploadDoc('${t.key}', '${categ}', event)"><button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px;margin-top:3px;" onclick="document.getElementById('upload-${t.key}').click()">📎 Enviar</button>`}
+                ${uploaded.status==='reprovado' ? `<input type="file" id="reupload-${t.key}" accept="image/*,application/pdf" style="display:none" onchange="uploadDoc('${t.key}','${categ}',event)"><button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px;margin-top:3px;background:#FEE2E2;color:#991B1B;" onclick="document.getElementById('reupload-${t.key}').click()">↩ Reenviar</button>` : ''}`
+              : `<input type="file" id="upload-${t.key}" accept="image/*,application/pdf" style="display:none" onchange="uploadDoc('${t.key}', '${categ}', event)"><button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px;margin-top:3px;" onclick="document.getElementById('upload-${t.key}').click()">📎 Enviar</button>`}
           </div>
         </div>`
       }).join('')}
@@ -5010,20 +5032,36 @@ async function retryOp(fn, retries = 3, delay = 1500) {
   }
 }
 
-// ── Compressão automática de imagens ──
+// ── Validação de tipo de arquivo (robusta p/ celular: HEIC do iPhone, MIME vazio no Android) ──
+function arquivoAceito(file) {
+  const t = (file.type || '').toLowerCase()
+  const nome = (file.name || '').toLowerCase()
+  if (t === 'application/pdf' || /\.pdf$/.test(nome)) return true
+  if (t.startsWith('image/')) return true
+  return /\.(jpe?g|png|webp|heic|heif|gif|bmp|tiff?)$/.test(nome)
+}
+
+// ── Compressão automática de imagens (converte HEIC/qualquer imagem para JPEG) ──
 async function comprimirImagem(file, maxWidth = 1600, quality = 0.82) {
-  if (!file.type.startsWith('image/') || file.type === 'application/pdf') return file
+  const t = (file.type || '').toLowerCase()
+  const nome = (file.name || '').toLowerCase()
+  if (t === 'application/pdf' || /\.pdf$/.test(nome)) return file
+  const ehImagem = t.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif|gif|bmp|tiff?)$/.test(nome)
+  if (!ehImagem) return file
+  const webSafe = ['image/jpeg','image/jpg','image/png','image/webp'].includes(t)
   return new Promise((resolve) => {
     const img = new Image()
     img.onload = () => {
       let { width, height } = img
-      if (width <= maxWidth && file.size < 500 * 1024) { resolve(file); return }
+      if (webSafe && width <= maxWidth && file.size < 500 * 1024) { resolve(file); return }
       if (width > maxWidth) { height = Math.round(height * maxWidth / width); width = maxWidth }
       const canvas = document.createElement('canvas')
-      canvas.width = width; canvas.height = height
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+      canvas.width = width || 1; canvas.height = height || 1
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
       canvas.toBlob(blob => {
-        if (blob && blob.size < file.size) {
+        // HEIC/formatos não web-safe: sempre usa o JPEG convertido (compatibilidade garantida).
+        // web-safe (JPG/PNG/WEBP): usa o JPEG só se ficou menor.
+        if (blob && (!webSafe || blob.size < file.size)) {
           resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }))
         } else { resolve(file) }
       }, 'image/jpeg', quality)
@@ -5036,8 +5074,7 @@ async function comprimirImagem(file, maxWidth = 1600, quality = 0.82) {
 async function uploadDoc(tipo, categoria, event) {
   const fileOrig = event.target.files[0]; if (!fileOrig) return
   if (fileOrig.size > 20 * 1024 * 1024) { toast('Arquivo muito grande (máx. 20MB).', 'error'); return }
-  const allowedTypes = ['image/jpeg','image/jpg','image/png','image/webp','application/pdf']
-  if (!allowedTypes.includes(fileOrig.type)) { toast('Tipo inválido. Use PDF, JPG ou PNG.', 'error'); return }
+  if (!arquivoAceito(fileOrig)) { toast('Formato não aceito. Use foto do celular (JPG/PNG/HEIC) ou PDF.', 'error'); return }
   if (!APP.colaboradorId) { toast('Salve os dados anteriores antes de enviar documentos.', 'warning'); return }
 
   // Encontrar botão de envio
@@ -5047,7 +5084,7 @@ async function uploadDoc(tipo, categoria, event) {
   toast('Enviando documento...', 'info')
 
   try {
-    const isPdf = fileOrig.type === 'application/pdf'
+    const isPdf = fileOrig.type === 'application/pdf' || /\.pdf$/i.test(fileOrig.name || '')
     const file = isPdf ? fileOrig : await comprimirImagem(fileOrig)
     const ext = isPdf ? 'pdf' : 'jpg'
     const path = `${APP.conviteAtual.id}/${tipo}_${Date.now()}.${ext}`
@@ -5154,17 +5191,20 @@ async function autoSave(dados) {
 
 async function _executarSave(dados) {
   try {
-    // PARTE 2: grava via função validada por token (faz UPSERT por convite_id no servidor)
-    const { data, error } = await sb.rpc('salvar_colaborador', {
-      p_token: APP.conviteAtual.token,
-      p_dados: dados,
+    // grava via função validada por token, com RE-TENTATIVA automática (rede instável no celular)
+    const data = await retryOp(async () => {
+      const { data, error } = await sb.rpc('salvar_colaborador', {
+        p_token: APP.conviteAtual.token,
+        p_dados: dados,
+      })
+      if (error) throw error
+      if (data?.erro) throw new Error(data.erro)
+      return data
     })
-    if (error) throw error
-    if (data?.erro) throw new Error(data.erro)
     if (data?.id) APP.colaboradorId = data.id
   } catch(e) {
     console.error('AutoSave error:', e)
-    toast('Erro ao salvar progresso. Verifique sua conexão.', 'warning')
+    toast('Não conseguimos salvar agora. Verifique a internet e evite fechar a página — vamos tentar de novo no próximo passo.', 'warning')
   }
 }
 
