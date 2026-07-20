@@ -13,11 +13,14 @@
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com data:;
   img-src 'self' data: blob: https://*.supabase.co;
-  connect-src 'self' https://*.supabase.co https://viacep.com.br;
+  connect-src 'self' https://*.supabase.co https://viacep.com.br https://cdnjs.cloudflare.com;
   object-src 'none';
   base-uri 'self';
-  form-action 'self';
-  frame-ancestors 'none';">
+  form-action 'self';">
+<!-- frame-ancestors NÃO funciona em <meta> (o navegador ignora e emite aviso no console).
+     Proteção contra clickjacking precisa vir de um cabeçalho HTTP no servidor:
+       Content-Security-Policy: frame-ancestors 'none';
+     ou, como alternativa mais simples:  X-Frame-Options: DENY  -->
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>RCONTRACT — Gestão de Admissões</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230A2342'/><text y='.9em' font-size='80' x='10' fill='%2300B4D8'>R</text></svg>">
@@ -4037,6 +4040,13 @@ async function initCandidato(token) {
     if (convite.erro === 'CONVITE_EXPIRADO') { renderCandError('Este link de admissão expirou. Entre em contato com o RH.'); return }
 
     APP.conviteAtual = convite
+    // O token BRUTO da URL já foi validado por get_convite_by_token acima. Reutilizamos
+    // ele em TODAS as chamadas de escrita (salvar_colaborador, aceitar_lgpd, salvar_documento,
+    // salvar_dependentes, finalizar_admissao). Antes, elas usavam convite.token vindo da
+    // resposta — se esse campo não vier (ou vier null), o RPC recebe token vazio e o
+    // servidor responde CONVITE_INVALIDO. Este token é garantidamente o mesmo que o
+    // servidor acabou de aceitar na leitura.
+    APP.conviteAtual.token = token
     const colab = convite.colaborador || null
     APP.colaboradorId = colab?.id || null
     APP.dadosCandidato = colab ? { ...colab } : {}
@@ -4210,21 +4220,29 @@ function renderLGPD(container) {
       // Fazer upload da assinatura para Storage (evita base64 gigante no banco)
       let assinatura_path = null
       try {
-        const sigDataUrl = canvas.toDataURL('image/png')
-        const sigBlob = await (await fetch(sigDataUrl)).blob()
+        // canvas.toBlob() gera o Blob direto, sem fetch() a uma data: URL.
+        // O fetch de data: era bloqueado pelo connect-src da CSP e fazia este
+        // bloco cair no catch — jogando a assinatura como base64 gigante no banco
+        // em vez do Storage. Mesmo padrão já usado no resto do arquivo.
+        const sigBlob = await new Promise(res => canvas.toBlob(res, 'image/png'))
         const sigFile = new File([sigBlob], 'assinatura.png', { type: 'image/png' })
         const sigPath = `${APP.conviteAtual.id}/assinatura_lgpd_${Date.now()}.png`
         const { error: upErr } = await sb.storage.from('admissoes').upload(sigPath, sigFile, { upsert: true, contentType: 'image/png' })
         if (!upErr) assinatura_path = sigPath
       } catch(sigErr) { /* Falha no upload não bloqueia o aceite */ }
 
-      await sb.rpc('aceitar_lgpd', {
+      // Verifica também o erro retornado pela função (erro), não só o erro de transporte
+      // (error). Sem isso, um CONVITE_INVALIDO do servidor passava como "sucesso" e o
+      // usuário avançava para a Etapa 1 — onde salvar_colaborador então falhava.
+      const { data: lgpdRes, error: lgpdErr } = await sb.rpc('aceitar_lgpd', {
         p_token: APP.conviteAtual.token,
         p_user_agent: navigator.userAgent,
         p_assinatura_path: assinatura_path,
         p_assinatura_dados: assinatura_path ? null : canvas.toDataURL('image/png'),
         p_versao: '1.0',
       })
+      if (lgpdErr) throw lgpdErr
+      if (lgpdRes?.erro) throw new Error(lgpdRes.erro)
 
       toast('LGPD aceito! Vamos começar.', 'success')
       renderEtapa(1)
@@ -5075,7 +5093,17 @@ async function uploadDoc(tipo, categoria, event) {
   const fileOrig = event.target.files[0]; if (!fileOrig) return
   if (fileOrig.size > 20 * 1024 * 1024) { toast('Arquivo muito grande (máx. 20MB).', 'error'); return }
   if (!arquivoAceito(fileOrig)) { toast('Formato não aceito. Use foto do celular (JPG/PNG/HEIC) ou PDF.', 'error'); return }
-  if (!APP.colaboradorId) { toast('Salve os dados anteriores antes de enviar documentos.', 'warning'); return }
+  // Se o registro do colaborador ainda não existe (algum autosave anterior pode ter
+  // falhado por rede instável), tenta criá-lo agora em vez de travar com uma mensagem
+  // que o candidato não tem como resolver (ele já preencheu tudo).
+  if (!APP.colaboradorId) {
+    toast('Preparando envio...', 'info')
+    await autoSave({ etapa_atual: 8 })
+    if (!APP.colaboradorId) {
+      toast('Não foi possível preparar o envio. Verifique sua conexão e tente novamente. Se o problema persistir, contate o RH.', 'error')
+      return
+    }
+  }
 
   // Encontrar botão de envio
   const inputEl = document.getElementById(`upload-${tipo}`)
