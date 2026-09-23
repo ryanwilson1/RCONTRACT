@@ -1271,34 +1271,20 @@ tbody tr:hover td { background: var(--gray50); }
 <div class="modal-overlay hidden" id="modal-aprovar-solicitacao">
   <div class="modal">
     <div class="modal-header">
-      <h3>Aprovar Solicitação e Gerar Link</h3>
+      <h3 id="aprov-titulo">Aprovar Solicitação</h3>
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-aprovar-solicitacao')" style="padding:6px 10px;">✕</button>
     </div>
     <div class="modal-body" id="form-aprovar-solicitacao">
-      <p style="font-size:13px;color:var(--gray600);margin-bottom:14px;">Confirme/complete os dados de contato do candidato indicado para gerar o link de admissão.</p>
-      <div class="field">
-        <label>Nome do Candidato *</label>
-        <input type="text" id="aprov-nome" required placeholder="Nome completo">
-      </div>
-      <div class="input-group">
-        <div class="field">
-          <label>E-mail *</label>
-          <input type="email" id="aprov-email" required placeholder="candidato@email.com">
-        </div>
-        <div class="field">
-          <label>Telefone / WhatsApp</label>
-          <input type="text" id="aprov-telefone" placeholder="(11) 99999-9999">
-        </div>
+      <p style="font-size:13px;color:var(--gray600);margin-bottom:14px;" id="aprov-intro">Aprove e assine como ADM/Diretoria. O link de admissão é enviado depois, em uma etapa separada.</p>
+      <div class="field" id="aprov-observacao-wrap">
+        <label>Observação da ADM/Diretoria (opcional)</label>
+        <textarea id="aprov-observacao" rows="2" placeholder="Parecer da administração / diretoria..."></textarea>
       </div>
       <div class="field">
-        <label>Observação do RH (opcional)</label>
-        <textarea id="aprov-observacao" rows="2" placeholder="Parecer da administração / RH..."></textarea>
-      </div>
-      <div class="field">
-        <label>Seu Nome (Aprovador/RH) *</label>
+        <label>Seu Nome (ADM/Diretoria) *</label>
         <input type="text" id="aprov-nome-aprovador" required placeholder="Nome completo">
       </div>
-      <p style="font-size:12px;color:var(--gray500);margin-bottom:6px;" id="sig-aprov-hint">⚠️ Preencha nome, e-mail do candidato e seu nome para liberar a assinatura.</p>
+      <p style="font-size:12px;color:var(--gray500);margin-bottom:6px;" id="sig-aprov-hint">⚠️ Preencha seu nome para liberar a assinatura.</p>
       <div class="sig-wrap" id="sig-aprov-wrap" style="position:relative;">
         <canvas id="sig-canvas-aprov" class="sig-canvas" style="pointer-events:none;opacity:.4;"></canvas>
         <div id="sig-aprov-overlay" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.55);font-size:12px;font-weight:600;color:var(--gray500);text-align:center;padding:0 16px;">
@@ -1309,7 +1295,52 @@ tbody tr:hover td { background: var(--gray50); }
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-aprovar-solicitacao')">Cancelar</button>
-      <button class="btn btn-primary" id="btn-confirmar-aprovar-solicitacao">✓ Aprovar e Gerar Link</button>
+      <button class="btn btn-primary" id="btn-confirmar-aprovar-solicitacao">✓ Aprovar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-link-admissao">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Enviar Link de Admissão</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-link-admissao')" style="padding:6px 10px;">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--gray600);margin-bottom:14px;">Confira os dados do candidato. O link gerado inicia a admissão (cadastro e envio de documentos).</p>
+      <div class="field">
+        <label>Nome do Candidato *</label>
+        <input type="text" id="link-nome" placeholder="Nome completo">
+      </div>
+      <div class="input-group">
+        <div class="field">
+          <label>E-mail <span style="font-weight:400;color:var(--gray400);">(opcional)</span></label>
+          <input type="email" id="link-email" placeholder="candidato@email.com">
+        </div>
+        <div class="field">
+          <label>Telefone / WhatsApp</label>
+          <input type="text" id="link-telefone" placeholder="(11) 99999-9999">
+        </div>
+      </div>
+      <div class="input-group">
+        <div class="field">
+          <label>Data Prevista de Admissão</label>
+          <input type="date" id="link-data-admissao">
+        </div>
+        <div class="field">
+          <label>Validade do Link</label>
+          <select id="link-validade">
+            <option value="7">7 dias</option>
+            <option value="15">15 dias</option>
+            <option value="30" selected>30 dias</option>
+            <option value="60">60 dias</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-link-admissao')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-link-admissao">🔗 Gerar Link de Admissão</button>
     </div>
   </div>
 </div>
@@ -1384,8 +1415,8 @@ function _rcStorage() {
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, storage: _rcStorage() }
 })
-console.log('%c[RCONTRACT] VERSAO 8 carregada', 'color:#00B4D8;font-weight:bold;font-size:16px')
-setTimeout(() => { try { toast('✅ RCONTRACT v8 — rastreio de abertura + auto-save à prova de queda', 'success') } catch(_){} }, 1200)
+console.log('%c[RCONTRACT] VERSAO 14 carregada', 'color:#00B4D8;font-weight:bold;font-size:16px')
+setTimeout(() => { try { toast('✅ RCONTRACT V14 carregado', 'success') } catch(_){} }, 1200)
 
 // ── Padronização: tudo que é digitado no sistema vira MAIÚSCULA ──
 // Exceções: e-mail, senha, número, data/hora e campos marcados com a classe "no-upper".
@@ -1513,20 +1544,66 @@ function applyMask(el, type) {
   if (masks[type]) el.addEventListener('input', e => { const pos = e.target.selectionStart; const raw = e.target.value; e.target.value = masks[type](raw) })
 }
 
+// V14: só os RÓTULOS mudaram — os valores gravados no banco continuam os mesmos.
+const STATUS_CFG = {
+  pendente:                { label:'Link Enviado',          cls:'badge-pendente' },
+  em_andamento:            { label:'Cadastro em Andamento', cls:'badge-andamento' },
+  documentacao_incompleta: { label:'Pendência',             cls:'badge-incompleta' },
+  em_analise:              { label:'Documentos em Análise', cls:'badge-analise' },
+  completa:                { label:'Finalizada',            cls:'badge-completa' },
+  aprovada:                { label:'Aprovada',              cls:'badge-completa' },
+  reprovada:               { label:'Reprovada',             cls:'badge-reprovada' },
+  admitido:                { label:'Admitido',              cls:'badge-admitido' },
+  expirado:                { label:'Expirado',              cls:'badge-expirado' },
+}
 function statusBadge(status) {
-  const cfg = {
-    pendente:                { label:'Pendente',        cls:'badge-pendente' },
-    em_andamento:            { label:'Em Andamento',    cls:'badge-andamento' },
-    documentacao_incompleta: { label:'Doc. Incompleta', cls:'badge-incompleta' },
-    em_analise:              { label:'Em Análise',      cls:'badge-analise' },
-    completa:                { label:'Completa',        cls:'badge-completa' },
-    aprovada:                { label:'Aprovada',        cls:'badge-completa' },
-    reprovada:               { label:'Reprovada',       cls:'badge-reprovada' },
-    admitido:                { label:'Admitido',        cls:'badge-admitido' },
-    expirado:                { label:'Expirado',        cls:'badge-expirado' },
-  }
-  const c = cfg[status] || cfg.pendente
+  const c = STATUS_CFG[status] || STATUS_CFG.pendente
   return `<span class="badge ${c.cls}">${c.label}</span>`
+}
+
+// ── Status da SOLICITAÇÃO (derivado dos campos já existentes — não exige novo valor no banco) ──
+// pendente                                   → AGUARDANDO APROVAÇÃO
+// aprovada sem assinatura da ADM/Diretoria   → AGUARDANDO ASSINATURA
+// aprovada com assinatura da ADM/Diretoria   → APROVADA
+// reprovada                                  → REPROVADA
+const SOL_STATUS_CFG = {
+  aguardando_aprovacao:  { label:'Aguardando Aprovação',  cls:'badge-pendente' },
+  aguardando_assinatura: { label:'Aguardando Assinatura', cls:'badge-analise' },
+  aprovada:              { label:'Aprovada',              cls:'badge-completa' },
+  reprovada:             { label:'Reprovada',             cls:'badge-reprovada' },
+}
+function solStatus(s) {
+  if (!s) return 'aguardando_aprovacao'
+  if (s.status === 'reprovada') return 'reprovada'
+  if (s.status === 'aprovada' || s.status === 'aguardando_assinatura') return s.assinatura_aprovador_path ? 'aprovada' : 'aguardando_assinatura'
+  return 'aguardando_aprovacao'
+}
+function solStatusBadge(s) {
+  const c = SOL_STATUS_CFG[solStatus(s)]
+  return `<span class="badge ${c.cls}">${c.label}</span>`
+}
+// Documentalmente concluída = gestor assinou + ADM aprovou + ADM assinou
+function _solConcluida(s) {
+  return solStatus(s) === 'aprovada' && !!s.assinatura_requisitante_path && !!s.assinatura_aprovador_path
+}
+
+// ── Banco Itaú: situação derivada dos campos bancários já existentes ──
+// 'carta'  → candidato NÃO tem conta Itaú e pediu Carta de Abertura (banco 341 sem conta)
+// 'itau'   → conta Itaú informada | 'outro' → conta em outro banco (cadastros antigos)
+function _itauSituacao(c) {
+  if (!c) return null
+  if (c.banco_codigo === '341' && !c.conta) return 'carta'
+  if (c.banco_codigo && c.conta) return c.banco_codigo === '341' ? 'itau' : 'outro'
+  return null
+}
+
+// ── Tipo do arquivo enviado (identificação visual no painel) ──
+function _tipoArquivoTag(d) {
+  const m = String(d?.mime_type || '').toLowerCase(), p = String(d?.storage_path || '').toLowerCase()
+  const t = (m.includes('pdf') || p.endsWith('.pdf')) ? 'PDF'
+          : (m.includes('jpeg') || m.includes('jpg') || /\.jpe?g$/.test(p)) ? 'JPG'
+          : (m.split('/')[1] || '').toUpperCase()
+  return t ? `<span class="chip" style="font-size:9px;margin-left:4px;">${esc(t)}</span>` : ''
 }
 
 function gerarProtocolo() {
@@ -1917,22 +1994,22 @@ async function renderDashboard() {
         <div class="stat-card">
           <div class="stat-icon" style="background:var(--warn-l);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
           <div class="stat-number" style="color:var(--warn);">${stats.pendentes}</div>
-          <div class="stat-label">Pendentes</div>
+          <div class="stat-label">Link Enviado</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon" style="background:var(--teal-xl);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
           <div class="stat-number" style="color:var(--teal-d);">${stats.andamento}</div>
-          <div class="stat-label">Em Andamento</div>
+          <div class="stat-label">Cadastro em Andamento</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon" style="background:var(--success-l);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
           <div class="stat-number" style="color:var(--success);">${stats.completas}</div>
-          <div class="stat-label">Completas</div>
+          <div class="stat-label">Finalizadas</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon" style="background:#FFF3CD;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg></div>
           <div class="stat-number" style="color:#D97706;">${stats.incompletas}</div>
-          <div class="stat-label">Doc. Incompleta</div>
+          <div class="stat-label">Pendência</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon" style="background:var(--gray100);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gray500)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg></div>
@@ -1964,7 +2041,7 @@ async function renderDashboard() {
                 <tr>
                   <td>
                     <div style="font-weight:600;color:var(--navy)">${c.candidato_nome}</div>
-                    <div style="font-size:11px;color:var(--gray400)">${c.candidato_email}</div>
+                    <div style="font-size:11px;color:var(--gray400)">${esc(c.candidato_email || '—')}</div>
                   </td>
                   <td>${c.funcao || '—'}</td>
                   <td>${c.obra_unidade || '—'}</td>
@@ -2013,11 +2090,11 @@ async function renderAdmissoes() {
           </div>
           <select class="filter-select" id="adm-filter">
             <option value="">Todos os status</option>
-            <option value="pendente">Pendente</option>
-            <option value="em_andamento">Em Andamento</option>
-            <option value="documentacao_incompleta">Doc. Incompleta</option>
-            <option value="em_analise">Em Análise</option>
-            <option value="completa">Completa</option>
+            <option value="pendente">Link Enviado</option>
+            <option value="em_andamento">Cadastro em Andamento</option>
+            <option value="em_analise">Documentos em Análise</option>
+            <option value="documentacao_incompleta">Pendência</option>
+            <option value="completa">Finalizada</option>
             <option value="aprovada">Aprovada</option>
             <option value="reprovada">Reprovada</option>
             <option value="admitido">Admitido</option>
@@ -2053,7 +2130,7 @@ async function loadAdmissoesTable() {
   if (!wrap) return // página pode ter mudado enquanto carregava
   wrap.innerHTML = '<div style="padding:40px;text-align:center;"><div class="load-ring" style="margin:0 auto;border-top-color:var(--navy);"></div></div>'
   try {
-    let query = sb.from('convites').select('*, colaboradores(etapa_atual)', { count:'exact' }).is('deleted_at',null).order('created_at',{ ascending:false }).range((admPage-1)*15, admPage*15-1)
+    let query = sb.from('convites').select('*, colaboradores(etapa_atual, banco_codigo, conta)', { count:'exact' }).is('deleted_at',null).order('created_at',{ ascending:false }).range((admPage-1)*15, admPage*15-1)
     if (admSearch) query = query.or(`candidato_nome.ilike.%${admSearch}%,candidato_email.ilike.%${admSearch}%,funcao.ilike.%${admSearch}%`)
     if (admStatus) query = query.eq('status', admStatus)
     const { data, count, error } = await query
@@ -2068,12 +2145,13 @@ async function loadAdmissoesTable() {
       <tbody>
         ${(data||[]).map(c => {
           const vencido = new Date(c.validade_ate) < new Date()
-          const etapa = c.colaboradores?.etapa_atual || 0
+          const etapa = (Array.isArray(c.colaboradores) ? c.colaboradores[0] : c.colaboradores)?.etapa_atual || 0
           const pct = Math.min((etapa/8)*100, 100)
           return `<tr>
             <td>
               <div style="font-weight:600;color:var(--navy);">${c.candidato_nome}</div>
-              <div style="font-size:11px;color:var(--gray400);">${c.candidato_email}</div>
+              <div style="font-size:11px;color:var(--gray400);">${esc(c.candidato_email || '—')}</div>
+              ${_itauSituacao(Array.isArray(c.colaboradores) ? c.colaboradores[0] : c.colaboradores) === 'carta' ? '<span class="chip" style="font-size:9px;margin-top:3px;background:var(--warn-l);color:#854D0E;">🏦 Carta Itaú solicitada</span>' : ''}
             </td>
             <td style="font-size:13px;">${c.funcao||'—'}</td>
             <td style="font-size:13px;">${c.obra_unidade||'—'}</td>
@@ -2184,8 +2262,8 @@ function renderNovoConvite() {
               <input type="text" name="candidato_nome" required placeholder="João da Silva">
             </div>
             <div class="field">
-              <label>E-mail *</label>
-              <input type="email" name="candidato_email" required placeholder="joao@empresa.com">
+              <label>E-mail <span style="font-weight:400;color:var(--gray400);">(opcional)</span></label>
+              <input type="email" name="candidato_email" placeholder="joao@empresa.com">
             </div>
           </div>
           <div class="field">
@@ -2269,7 +2347,7 @@ async function submitNovoConvite(e) {
     const payload = {
       token,
       candidato_nome: sanitizar(fd.get('candidato_nome') || ''),
-      candidato_email: (fd.get('candidato_email') || '').trim().toLowerCase(),
+      candidato_email: (fd.get('candidato_email') || '').trim().toLowerCase() || null,
       candidato_telefone: fd.get('candidato_telefone') || null,
       funcao: sanitizar(fd.get('funcao') || ''),
       salario: parseFloat(salVal) || null,
@@ -2283,9 +2361,7 @@ async function submitNovoConvite(e) {
     // Criação via RPC SECURITY DEFINER — mesmo padrão de criar_solicitacao/salvar_colaborador.
     // Funciona mesmo quando o token de login não chega ao servidor (a função roda no banco e ignora o RLS).
     console.log('%c[RCONTRACT v3] gerando convite via RPC criar_convite...', 'color:#00B4D8;font-weight:bold')
-    const { data: _novoConv, error } = await sb.rpc('criar_convite', { p: payload })
-    if (error) throw error
-    if (_novoConv?.erro) throw new Error(_novoConv.erro)
+    const _novoConv = await _criarConviteRPC(payload)
     logTimeline(_novoConv?.id, 'convite_criado', 'Convite de admissão gerado')
     const link = `${window.location.origin}${window.location.pathname}#/admissao/${token}`
     document.getElementById('link-gerado').value = link
@@ -2300,6 +2376,19 @@ async function submitNovoConvite(e) {
   } finally {
     btn.disabled = false; btn.textContent = '🔗 Gerar Link de Admissão'
   }
+}
+
+// Cria o convite pela RPC existente 'criar_convite'. E-mail é opcional para o administrador:
+// se o banco ainda exigir o campo preenchido (NOT NULL), tenta de novo com texto vazio.
+async function _criarConviteRPC(payload) {
+  const { data, error } = await sb.rpc('criar_convite', { p: payload })
+  if ((error || data?.erro) && !payload.candidato_email) {
+    const r = await sb.rpc('criar_convite', { p: Object.assign({}, payload, { candidato_email: '' }) })
+    if (!r.error && !r.data?.erro) return r.data
+  }
+  if (error) throw error
+  if (data?.erro) throw new Error(data.erro)
+  return data
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -2624,7 +2713,8 @@ async function renderSolicitacoes() {
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <select id="sol-filtro-status" style="font-size:13px;padding:8px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--gray200);">
             <option value="todos">Todos os status</option>
-            <option value="pendente">Pendentes</option>
+            <option value="aguardando_aprovacao">Aguardando Aprovação</option>
+            <option value="aguardando_assinatura">Aguardando Assinatura</option>
             <option value="aprovada">Aprovadas</option>
             <option value="reprovada">Reprovadas</option>
           </select>
@@ -2645,12 +2735,16 @@ async function loadSolicitacoesTabela() {
   const wrap = document.getElementById('sol-tabela-wrap')
   wrap.innerHTML = '<div class="loading-center"><div class="load-ring"></div></div>'
   try {
-    let query = sb.from('solicitacoes_contratacao').select('*').order('created_at', { ascending:false })
-    if (solFiltroStatus !== 'todos') query = query.eq('status', solFiltroStatus)
-    const { data, error } = await query
+    const { data: todas, error } = await sb.from('solicitacoes_contratacao').select('*').order('created_at', { ascending:false })
     if (error) throw error
-    if (!data || data.length === 0) {
+    if (!todas || todas.length === 0) {
       wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Nenhuma solicitação</div><p class="empty-desc">Compartilhe o link público com os encarregados/gestores de obra.</p></div>`
+      return
+    }
+    // status novo é derivado dos campos existentes → filtro no navegador
+    const data = todas.filter(s => solFiltroStatus === 'todos' || solStatus(s) === solFiltroStatus)
+    if (!data.length) {
+      wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Nenhuma solicitação neste status</div><p class="empty-desc">Escolha outro filtro para ver as demais.</p></div>`
       return
     }
     wrap.innerHTML = `
@@ -2667,7 +2761,7 @@ async function loadSolicitacoesTabela() {
               <td>${s.local_obra}</td>
               <td>${s.funcao}</td>
               <td>${s.nome_indicado}</td>
-              <td>${statusBadge(s.status === 'aprovada' ? 'aprovada' : s.status === 'reprovada' ? 'reprovada' : 'pendente')}</td>
+              <td>${solStatusBadge(s)}${s.convite_id ? '<div style="font-size:10px;color:var(--success);margin-top:3px;">🔗 link de admissão enviado</div>' : ''}</td>
               <td>${formatDate(s.created_at)}</td>
               <td><button class="btn btn-outline btn-sm" onclick="abrirDetalheSolicitacao('${s.id}')">Ver</button></td>
             </tr>`).join('')}
@@ -2685,7 +2779,7 @@ async function abrirDetalheSolicitacao(id) {
   const body = document.getElementById('modal-detalhe-solicitacao-body')
   body.innerHTML = '<div class="loading-center"><div class="load-ring"></div></div>'
   openModal('modal-detalhe-solicitacao')
-  const { data: s, error } = await sb.from('solicitacoes_contratacao').select('*, convites!convite_id(token,status)').eq('id', id).single()
+  const { data: s, error } = await sb.from('solicitacoes_contratacao').select('*, convites!convite_id(token,status,created_at,aberto_em)').eq('id', id).single()
   if (error) { body.innerHTML = `<p>Erro: ${error.message}</p>`; return }
   _solAtual = s
   const linkConvite = s.convites?.token ? `${window.location.origin}${window.location.pathname}#/admissao/${s.convites.token}` : null
@@ -2705,8 +2799,17 @@ async function abrirDetalheSolicitacao(id) {
           <div style="font-size:11px;color:var(--gray500);font-family:var(--mono);">${s.protocolo}</div>
           <h3 style="margin-top:2px;">${s.nome_indicado}</h3>
         </div>
-        ${statusBadge(s.status)}
+        ${solStatusBadge(s)}
       </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+        ${[
+          ['Gestor assinou', !!s.assinatura_requisitante_path],
+          [s.status === 'reprovada' ? 'ADM reprovou' : 'ADM aprovou', s.status === 'aprovada' || s.status === 'reprovada'],
+          ['ADM assinou', !!s.assinatura_aprovador_path && s.status !== 'reprovada'],
+          ['Link de admissão enviado', !!s.convite_id],
+        ].map(([t, ok]) => `<span class="chip" style="font-size:11px;${ok ? 'background:var(--success-l);color:#22543D;' : 'background:var(--gray100);color:var(--gray500);'}">${ok ? '✓' : '○'} ${t}</span>`).join('')}
+      </div>
+      ${solStatus(s) === 'aprovada' && !s.assinatura_requisitante_path ? `<div class="alert alert-warning" style="margin-bottom:14px;"><span>⚠</span><span>Falta a assinatura do gestor nesta solicitação. Sem ela o documento não é considerado concluído — peça ao gestor para reenviar a solicitação pelo link.</span></div>` : ''}
       <div class="input-group">
         <div class="field"><label>Requisitante</label><div>${s.requisitante}</div></div>
         <div class="field"><label>Local / Obra</label><div>${s.local_obra}</div></div>
@@ -2740,12 +2843,12 @@ async function abrirDetalheSolicitacao(id) {
 
       <div class="input-group" style="margin-top:6px;">
         <div class="field">
-          <label>✍️ Assinatura do Requisitante</label>
+          <label>✍️ Assinatura do Gestor (Requisitante)</label>
           ${sigReqUrl ? `<img src="${sigReqUrl}" style="height:60px;border:1px solid var(--gray200);border-radius:var(--radius-sm);background:#fff;padding:4px;">` : `<div style="font-size:12px;color:var(--gray400);">Não assinado</div>`}
         </div>
         <div class="field">
-          <label>✍️ Assinatura do Aprovador (RH)${s.assinatura_aprovador_nome ? ' — ' + s.assinatura_aprovador_nome : ''}</label>
-          ${sigAprovUrl ? `<img src="${sigAprovUrl}" style="height:60px;border:1px solid var(--gray200);border-radius:var(--radius-sm);background:#fff;padding:4px;">` : `<div style="font-size:12px;color:var(--gray400);">Pendente de decisão</div>`}
+          <label>✍️ Assinatura da ADM/Diretoria${s.assinatura_aprovador_nome ? ' — ' + s.assinatura_aprovador_nome : ''}</label>
+          ${sigAprovUrl ? `<img src="${sigAprovUrl}" style="height:60px;border:1px solid var(--gray200);border-radius:var(--radius-sm);background:#fff;padding:4px;">` : `<div style="font-size:12px;color:var(--gray400);">${solStatus(s) === 'aguardando_assinatura' ? 'Aguardando assinatura' : 'Pendente de decisão'}</div>`}
         </div>
       </div>
 
@@ -2787,20 +2890,102 @@ async function abrirDetalheSolicitacao(id) {
 
       ${linkConvite ? `
       <div style="background:var(--success-l);border:1.5px solid #9AE6B4;border-radius:var(--radius-sm);padding:12px 14px;margin-top:10px;">
-        <div style="font-size:11px;font-weight:700;color:#22543D;text-transform:uppercase;margin-bottom:6px;">🔗 Link de Admissão Gerado</div>
+        <div style="font-size:11px;font-weight:700;color:#22543D;text-transform:uppercase;margin-bottom:6px;">🔗 Link de Admissão Enviado</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <input readonly value="${linkConvite}" style="flex:1;min-width:0;border:1.5px solid var(--gray200);border-radius:var(--radius-sm);padding:8px 10px;font-family:var(--mono);font-size:11px;">
           <button class="btn btn-primary btn-sm" onclick="navigator.clipboard.writeText('${linkConvite}').then(()=>toast('Link copiado!','success'))">📋 Copiar</button>
         </div>
       </div>` : ''}
+
+      <div class="divider"></div>
+      <div class="section-label">📜 Histórico</div>
+      <div id="sol-historico"><div style="padding:14px;text-align:center;"><div class="load-ring" style="margin:0 auto;border-top-color:var(--navy);"></div></div></div>
     </div>
     <div class="modal-footer" style="padding:16px 0 0;border-top:1px solid var(--gray200);margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-outline btn-sm" onclick="imprimirSolicitacao()">🖨️ Imprimir</button>
-      ${s.status === 'pendente' ? `
+      ${solStatus(s) === 'aguardando_aprovacao' ? `
         <button class="btn btn-danger btn-sm" onclick="abrirReprovarSolicitacao()">✕ Reprovar</button>
-        <button class="btn btn-primary btn-sm" onclick="abrirAprovarSolicitacao()">✓ Aprovar e Gerar Link</button>
+        <button class="btn btn-primary btn-sm" onclick="abrirAprovarSolicitacao('aprovar')">✓ Aprovar</button>
+      ` : ''}
+      ${solStatus(s) === 'aguardando_assinatura' ? `
+        <button class="btn btn-primary btn-sm" onclick="abrirAprovarSolicitacao('assinar')">✍️ Assinar como ADM/Diretoria</button>
+      ` : ''}
+      ${_solConcluida(s) ? `
+        <button class="btn btn-outline btn-sm" onclick="pdfSolicitacao('ver')">👁 Visualizar PDF</button>
+        <button class="btn btn-outline btn-sm" onclick="pdfSolicitacao('baixar')">⬇ Baixar PDF</button>
+        ${!s.convite_id ? `<button class="btn btn-primary btn-sm" onclick="abrirEnviarLinkAdmissao()">📨 Enviar Link de Admissão</button>` : ''}
       ` : ''}
     </div>`
+  _renderHistoricoSolicitacao(s)
+}
+
+// ── Histórico da solicitação ──
+// Reaproveita a tabela 'timeline' existente (coluna solicitacao_id — ver migração V14).
+// Mesmo sem a migração, o histórico é montado a partir dos próprios campos da solicitação/admissão.
+const SOL_EVENTOS = {
+  solicitacao_criada:    '📝 Solicitação criada',
+  gestor_assinou:        '✍️ Gestor assinou',
+  solicitacao_aprovada:  '✅ Solicitação aprovada',
+  solicitacao_reprovada: '❌ Solicitação reprovada',
+  adm_assinou:           '✍️ ADM/Diretoria assinou',
+  pdf_gerado:            '📄 PDF gerado',
+  link_admissao_enviado: '🔗 Link de admissão enviado',
+  candidato_iniciou:     '👤 Candidato iniciou o cadastro',
+  documentos_enviados:   '📎 Documentos enviados',
+}
+async function logTimelineSol(solicitacaoId, evento, descricao, conviteId) {
+  if (!solicitacaoId) return
+  try {
+    const { error } = await sb.from('timeline').insert({ solicitacao_id: solicitacaoId, convite_id: conviteId || null, evento, descricao: descricao || null })
+    if (error) console.warn('logTimelineSol (rode a migração V14 para gravar o histórico da solicitação):', error.message)
+  } catch (e) { console.warn('logTimelineSol:', e) }
+}
+function _tsDoPath(path) {
+  const m = String(path || '').match(/_(\d{13})\.png$/)
+  return m ? new Date(Number(m[1])).toISOString() : null
+}
+async function _renderHistoricoSolicitacao(s) {
+  const ev = []
+  const add = (evento, quando, descricao) => { if (quando) ev.push({ evento, quando, descricao: descricao || '' }) }
+  let registrados = []
+  try {
+    const { data, error } = await sb.from('timeline').select('evento, descricao, created_at').eq('solicitacao_id', s.id).order('created_at')
+    if (!error && data) registrados = data
+  } catch (_) {}
+  const reg = k => registrados.some(r => r.evento === k)
+  registrados.forEach(r => add(r.evento, r.created_at, r.descricao))
+  if (!reg('solicitacao_criada')) add('solicitacao_criada', s.created_at, 'Por ' + (s.requisitante || '—') + (s.local_obra ? ' — ' + s.local_obra : ''))
+  if (s.assinatura_requisitante_path && !reg('gestor_assinou')) add('gestor_assinou', s.created_at, s.requisitante || '')
+  if (s.status === 'reprovada' && !reg('solicitacao_reprovada'))
+    add('solicitacao_reprovada', s.aprovado_em, 'Motivo: ' + (s.motivo_reprovacao || '—') + (s.assinatura_aprovador_nome ? ' — por ' + s.assinatura_aprovador_nome : ''))
+  if (s.status === 'aprovada' && !reg('solicitacao_aprovada')) add('solicitacao_aprovada', s.aprovado_em, s.assinatura_aprovador_nome ? 'Por ' + s.assinatura_aprovador_nome : '')
+  if (s.status === 'aprovada' && s.assinatura_aprovador_path && !reg('adm_assinou'))
+    add('adm_assinou', _tsDoPath(s.assinatura_aprovador_path) || s.aprovado_em, s.assinatura_aprovador_nome || '')
+  if (s.convite_id) {
+    if (s.convites && !reg('link_admissao_enviado')) add('link_admissao_enviado', s.convites.created_at, '')
+    try {
+      const { data: col } = await sb.from('colaboradores').select('id, created_at').eq('convite_id', s.convite_id).maybeSingle()
+      if (col) {
+        add('candidato_iniciou', col.created_at, '')
+        const { data: docs } = await sb.from('documentos').select('created_at, categoria').eq('colaborador_id', col.id).order('created_at')
+        const env = (docs || []).filter(d => d.categoria !== 'gerado_rh')
+        if (env.length) add('documentos_enviados', env[env.length - 1].created_at, env.length + ' documento(s) enviado(s) pelo candidato')
+      }
+    } catch (_) {}
+  }
+  ev.sort((a, b) => new Date(a.quando) - new Date(b.quando))
+  const alvo = document.getElementById('sol-historico')
+  if (!alvo) return
+  alvo.innerHTML = '<div class="timeline">' + (ev.map(t => `
+    <div class="tl-item">
+      <div class="tl-line"></div>
+      <div class="tl-dot" style="background:var(--navy);color:var(--teal);font-size:10px;">⚡</div>
+      <div class="tl-body">
+        <div class="tl-event">${esc(SOL_EVENTOS[t.evento] || String(t.evento || '').replace(/_/g, ' '))}</div>
+        <div class="tl-desc">${esc(t.descricao)}</div>
+        <div class="tl-time">${new Date(t.quando).toLocaleString('pt-BR')}</div>
+      </div>
+    </div>`).join('') || '<div class="empty-state"><div class="empty-icon">📜</div><div class="empty-title">Nenhum evento registrado</div></div>') + '</div>'
 }
 
 const _sigGateControllers = {}
@@ -2862,6 +3047,7 @@ function abrirReprovarSolicitacao() {
 document.addEventListener('click', e => {
   if (e.target?.id === 'btn-confirmar-reprovar-solicitacao') confirmarReprovarSolicitacao()
   if (e.target?.id === 'btn-confirmar-aprovar-solicitacao') confirmarAprovarSolicitacao()
+  if (e.target?.id === 'btn-confirmar-link-admissao') confirmarEnviarLinkAdmissao()
 })
 
 async function uploadAssinatura(sigCanvasObj, solicitacaoId, tipo) {
@@ -2890,6 +3076,7 @@ async function confirmarReprovarSolicitacao() {
       assinatura_aprovador_nome: sanitizar(nomeAprovador),
     }).eq('id', _solAtual.id)
     if (error) throw error
+    logTimelineSol(_solAtual.id, 'solicitacao_reprovada', 'Motivo: ' + sanitizar(motivo) + ' — por ' + sanitizar(nomeAprovador))
     closeModal('modal-reprovar-solicitacao')
     toast('Solicitação reprovada.', 'success')
     await abrirDetalheSolicitacao(_solAtual.id)
@@ -2902,77 +3089,128 @@ async function confirmarReprovarSolicitacao() {
   }
 }
 
-function abrirAprovarSolicitacao() {
-  document.getElementById('aprov-nome').value = _solAtual.nome_indicado || ''
-  document.getElementById('aprov-email').value = _solAtual.email_indicado || ''
-  document.getElementById('aprov-telefone').value = _solAtual.telefone_indicado || ''
+// modo 'aprovar' → aprova (assinando agora ou depois) | modo 'assinar' → ADM/Diretoria assina uma solicitação já aprovada
+function abrirAprovarSolicitacao(modo) {
+  APP._aprovModo = modo === 'assinar' ? 'assinar' : 'aprovar'
+  const assinar = APP._aprovModo === 'assinar'
+  document.getElementById('aprov-titulo').textContent = assinar ? 'Assinar Solicitação (ADM/Diretoria)' : 'Aprovar Solicitação'
+  document.getElementById('aprov-intro').textContent = assinar
+    ? 'A solicitação já foi aprovada. Assine como ADM/Diretoria para concluir o documento.'
+    : 'Aprove e assine como ADM/Diretoria (ou aprove agora e assine depois). O link de admissão é enviado em uma etapa separada.'
+  document.getElementById('aprov-observacao-wrap').style.display = assinar ? 'none' : ''
   document.getElementById('aprov-observacao').value = ''
-  document.getElementById('aprov-nome-aprovador').value = APP.profile?.nome || ''
+  document.getElementById('aprov-nome-aprovador').value = (assinar && _solAtual?.assinatura_aprovador_nome) || APP.profile?.nome || ''
+  document.getElementById('btn-confirmar-aprovar-solicitacao').textContent = assinar ? '✍️ Assinar' : '✓ Aprovar'
   openModal('modal-aprovar-solicitacao')
   setTimeout(() => {
-    applyMask(document.getElementById('aprov-telefone'), 'telefone')
     _sigAprov = setupSigCanvas('sig-canvas-aprov')
     document.getElementById('btn-limpar-sig-aprov').onclick = () => _sigAprov.clear()
     wireSigGate('form-aprovar-solicitacao', 'sig-canvas-aprov', 'sig-aprov-overlay', 'sig-aprov-hint', 'btn-limpar-sig-aprov',
       () => _sigAprov,
-      '⚠️ Preencha nome, e-mail do candidato e seu nome para liberar a assinatura.',
-      '✅ Dados completos. Assine para confirmar a aprovação:')
+      '⚠️ Preencha seu nome para liberar a assinatura.',
+      assinar ? '✅ Assine abaixo para concluir o documento:' : '✅ Assine abaixo para confirmar a aprovação:')
   }, 0)
 }
 
 async function confirmarAprovarSolicitacao() {
-  const email = document.getElementById('aprov-email').value.trim().toLowerCase()
-  const nome = document.getElementById('aprov-nome').value.trim()
-  const telefone = document.getElementById('aprov-telefone').value.trim()
+  const s = _solAtual
+  if (!s) return
+  const assinar = APP._aprovModo === 'assinar'
   const observacao = document.getElementById('aprov-observacao').value.trim()
   const nomeAprovador = document.getElementById('aprov-nome-aprovador').value.trim()
-  if (!nome || !validarEmail(email)) { toast('Informe nome e e-mail válido do candidato.', 'warning'); return }
-  if (!nomeAprovador) { toast('Informe seu nome (aprovador/RH).', 'warning'); return }
-  if (!_sigAprov || !_sigAprov.hasSignature()) { toast('Assine no campo de assinatura para confirmar a aprovação.', 'warning'); return }
+  if (!nomeAprovador) { toast('Informe seu nome (ADM/Diretoria).', 'warning'); return }
+  const assinou = !!(_sigAprov && _sigAprov.hasSignature())
+  if (assinar && !assinou) { toast('Assine no campo de assinatura para concluir.', 'warning'); return }
+  if (!assinar && !assinou && !confirm('Aprovar sem assinar agora?\n\nA solicitação ficará como AGUARDANDO ASSINATURA até a ADM/Diretoria assinar.')) return
   const btn = document.getElementById('btn-confirmar-aprovar-solicitacao')
-  btn.disabled = true; btn.textContent = 'Gerando...'
+  btn.disabled = true; btn.textContent = 'Salvando...'
   try {
-    const sigPath = await uploadAssinatura(_sigAprov, _solAtual.id, 'aprovador')
-    const token = Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(16).padStart(2,'0')).join('')
-    const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString()
-    const { data: convite, error: errConvite } = await sb.rpc('criar_convite', { p: {
-      token,
-      candidato_nome: sanitizar(nome),
-      candidato_email: email,
-      candidato_telefone: telefone || null,
-      funcao: _solAtual.funcao,
-      salario: _solAtual.faixa_salarial,
-      obra_unidade: _solAtual.local_obra,
-      gestor_responsavel: _solAtual.requisitante,
-      validade_ate: expiresAt,
-      criado_por: APP.user.id,
-      status: 'pendente',
-      solicitacao_id: _solAtual.id,
-    }})
-    if (errConvite) throw errConvite
-    if (convite?.erro) throw new Error(convite.erro)
-
-    const { error: errSol } = await sb.from('solicitacoes_contratacao').update({
+    const sigPath = assinou ? await uploadAssinatura(_sigAprov, s.id, 'aprovador') : null
+    const upd = { assinatura_aprovador_nome: sanitizar(nomeAprovador) }
+    if (!assinar) Object.assign(upd, {
       status: 'aprovada',
-      observacoes_rh: observacao ? sanitizar(observacao) : null,
       aprovado_por: APP.user.id,
       aprovado_em: new Date().toISOString(),
-      convite_id: convite.id,
-      assinatura_aprovador_path: sigPath,
-      assinatura_aprovador_nome: sanitizar(nomeAprovador),
-    }).eq('id', _solAtual.id)
-    if (errSol) throw errSol
-    logTimeline(convite.id, 'solicitacao_aprovada', 'Solicitação aprovada e convite de admissão gerado')
-
+      observacoes_rh: observacao ? sanitizar(observacao) : (s.observacoes_rh || null),
+    })
+    if (sigPath) upd.assinatura_aprovador_path = sigPath
+    const { error } = await sb.from('solicitacoes_contratacao').update(upd).eq('id', s.id)
+    if (error) throw error
+    if (!assinar) logTimelineSol(s.id, 'solicitacao_aprovada', 'Aprovada por ' + sanitizar(nomeAprovador) + (observacao ? ' — ' + sanitizar(observacao) : ''))
+    if (sigPath) logTimelineSol(s.id, 'adm_assinou', 'Assinada por ' + sanitizar(nomeAprovador))
     closeModal('modal-aprovar-solicitacao')
-    toast('Solicitação aprovada! Link de admissão gerado.', 'success')
-    await abrirDetalheSolicitacao(_solAtual.id)
+    toast(sigPath ? 'Solicitação aprovada e assinada. Já é possível gerar o PDF e enviar o link de admissão.'
+                  : 'Solicitação aprovada — aguardando assinatura da ADM/Diretoria.', 'success')
+    await abrirDetalheSolicitacao(s.id)
     loadSolicitacoesTabela()
     loadDashboardBadge()
   } catch(e) {
-    toast('Erro ao aprovar: ' + e.message, 'error')
+    toast('Erro ao salvar: ' + e.message, 'error')
   } finally {
-    btn.disabled = false; btn.textContent = '✓ Aprovar e Gerar Link'
+    btn.disabled = false; btn.textContent = assinar ? '✍️ Assinar' : '✓ Aprovar'
+  }
+}
+
+// ── LINK DE ADMISSÃO: só depois de gestor assinou + ADM aprovou + ADM assinou ──
+function abrirEnviarLinkAdmissao() {
+  const s = _solAtual
+  if (!s) return
+  if (!_solConcluida(s)) { toast('O link de admissão fica disponível depois das assinaturas do gestor e da ADM/Diretoria.', 'warning'); return }
+  if (s.convite_id) { toast('Esta solicitação já tem link de admissão.', 'info'); return }
+  document.getElementById('link-nome').value = s.nome_indicado || ''
+  document.getElementById('link-email').value = s.email_indicado || ''
+  document.getElementById('link-telefone').value = s.telefone_indicado || ''
+  document.getElementById('link-data-admissao').value = s.prazo_inicio_previsto ? String(s.prazo_inicio_previsto).slice(0, 10) : ''
+  document.getElementById('link-validade').value = '30'
+  if (!APP._maskLinkTel) { applyMask(document.getElementById('link-telefone'), 'telefone'); APP._maskLinkTel = true }
+  openModal('modal-link-admissao')
+}
+
+async function confirmarEnviarLinkAdmissao() {
+  const s = _solAtual
+  if (!s) return
+  if (!_solConcluida(s) || s.convite_id) { closeModal('modal-link-admissao'); return }
+  const nome = document.getElementById('link-nome').value.trim()
+  const email = document.getElementById('link-email').value.trim().toLowerCase()
+  const telefone = document.getElementById('link-telefone').value.trim()
+  const dataAdm = document.getElementById('link-data-admissao').value
+  const validadeDias = parseInt(document.getElementById('link-validade').value || 30)
+  if (!nome) { toast('Informe o nome do candidato.', 'warning'); return }
+  if (email && !validarEmail(email)) { toast('E-mail inválido. Corrija ou deixe em branco.', 'warning'); return }
+  const btn = document.getElementById('btn-confirmar-link-admissao')
+  btn.disabled = true; btn.textContent = 'Gerando...'
+  try {
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(16).padStart(2,'0')).join('')
+    const expiresAt = new Date(Date.now() + validadeDias * 86400000).toISOString()
+    const convite = await _criarConviteRPC({
+      token,
+      candidato_nome: sanitizar(nome),
+      candidato_email: email || null,
+      candidato_telefone: telefone || null,
+      funcao: s.funcao,
+      salario: s.faixa_salarial,
+      obra_unidade: s.local_obra,
+      gestor_responsavel: s.requisitante,
+      data_admissao_prevista: dataAdm || null,
+      validade_ate: expiresAt,
+      criado_por: APP.user.id,
+      status: 'pendente',
+      solicitacao_id: s.id,
+    })
+    const { error: errSol } = await sb.from('solicitacoes_contratacao').update({ convite_id: convite.id }).eq('id', s.id)
+    if (errSol) throw errSol
+    logTimeline(convite.id, 'link_admissao_enviado', 'Link de admissão gerado a partir da solicitação ' + (s.protocolo || ''))
+    logTimelineSol(s.id, 'link_admissao_enviado', 'Link gerado para ' + sanitizar(nome), convite.id)
+    closeModal('modal-link-admissao')
+    copiarLink(token)
+    toast('Link de admissão gerado e copiado. Envie ao candidato.', 'success')
+    await abrirDetalheSolicitacao(s.id)
+    loadSolicitacoesTabela()
+    loadDashboardBadge()
+  } catch(e) {
+    toast('Erro ao gerar o link: ' + e.message, 'error')
+  } finally {
+    btn.disabled = false; btn.textContent = '🔗 Gerar Link de Admissão'
   }
 }
 
@@ -3024,9 +3262,23 @@ async function salvarAvaliacaoSolicitacao() {
   } catch(e) { toast('Erro ao salvar: ' + e.message, 'error') }
 }
 
-async function imprimirSolicitacao() {
-  const s = _solAtual
-  if (!s) return
+// Assinatura como data URL (funciona na impressão e no PDF); cai para URL assinada se o download falhar
+async function _sigSrcSolicitacao(path) {
+  if (!path) return null
+  try {
+    const { data, error } = await sb.storage.from('admissoes').download(path)
+    if (error || !data) throw error || new Error('sem arquivo')
+    return await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(data) })
+  } catch (_) {
+    try {
+      const { data } = await sb.storage.from('admissoes').createSignedUrl(path, 600)
+      return data?.signedUrl || null
+    } catch (__) { return null }
+  }
+}
+
+// Monta o documento oficial da solicitação (mesmo layout da impressão) — usado por Imprimir e pelo PDF
+async function _solicitacaoDocumento(s) {
   const legendaAval = {1:'1- Insuficiente – Não corresponde aos requisitos do cargo',2:'2-Aceitável- Poderá atingir os requisitos do cargo',3:'3-Bom – Atinge os padrões do Cargo',4:'4-Muito Bom – Dentro dos melhores padrões do cargo',5:'5-Não Avaliado – Justificar',6:'6- Observação: Descrever'}
   const X = (cond) => cond ? 'X' : ''
   const tipoX = t => s.tipo_contratacao === t ? 'X' : ' '
@@ -3034,29 +3286,22 @@ async function imprimirSolicitacao() {
   const avalRow = (label, val) => `<tr><td>${label}</td>${[1,2,3,4,5,6].map(n=>`<td style="text-align:center;width:22px;">${val==n?'X':''}</td>`).join('')}<td>${val===5||val===6?(s.aval_observacao||''):''}</td></tr>`
 
   async function sigImgHtml(path) {
-    if (!path) return '____________________________________'
-    try {
-      const { data, error } = await sb.storage.from('admissoes').createSignedUrl(path, 600)
-      if (error || !data?.signedUrl) return '____________________________________'
-      return `<img src="${data.signedUrl}" style="height:55px;max-width:260px;display:block;" />`
-    } catch(_) { return '____________________________________' }
+    const src = await _sigSrcSolicitacao(path)
+    return src ? `<img src="${src}" style="height:55px;max-width:260px;display:block;" />` : '____________________________________'
   }
   const sigRequisitanteHtml = await sigImgHtml(s.assinatura_requisitante_path)
   const sigAprovadorHtml = await sigImgHtml(s.assinatura_aprovador_path)
-
-  const w = window.open('', '_blank')
-  w.document.write(`
-  <html><head><title>Solicitação ${s.protocolo}</title>
-  <style>
-    body { font-family: Arial, sans-serif; font-size: 12px; color: #111; padding: 24px; }
-    h1 { font-size: 15px; text-align:center; border:2px solid #000; padding:8px; margin-bottom:10px; }
-    table { width:100%; border-collapse: collapse; margin-bottom:10px; }
-    td, th { border:1px solid #000; padding:5px 7px; vertical-align: top; font-size:11.5px; }
-    .label { font-weight:bold; }
-    .sec { background:#ddd; font-weight:bold; text-align:center; }
-    .protocolo { text-align:right; font-size:10px; color:#555; margin-bottom:4px; }
-    .legenda { font-size:10px; }
-  </style></head><body>
+  // p = seletor raiz ('body' na impressão, '#solpdf' no PDF)
+  const css = p => `
+    ${p} { font-family: Arial, sans-serif; font-size: 12px; color: #111; padding: 24px; background:#fff; }
+    ${p} h1 { font-size: 15px; text-align:center; border:2px solid #000; padding:8px; margin-bottom:10px; }
+    ${p} table { width:100%; border-collapse: collapse; margin-bottom:10px; }
+    ${p} td, ${p} th { border:1px solid #000; padding:5px 7px; vertical-align: top; font-size:11.5px; }
+    ${p} .label { font-weight:bold; }
+    ${p} .sec { background:#ddd; font-weight:bold; text-align:center; }
+    ${p} .protocolo { text-align:right; font-size:10px; color:#555; margin-bottom:4px; }
+    ${p} .legenda { font-size:10px; }`
+  const corpo = `
     <div class="protocolo">Protocolo: ${s.protocolo} — Emitido em ${formatDate(s.created_at)}</div>
     <h1>SOLICITAÇÃO PARA CONTRATAÇÃO DE PROFISSIONAIS</h1>
     <table>
@@ -3130,11 +3375,68 @@ async function imprimirSolicitacao() {
         </td>
         <td>Data:<br><br>${s.aprovado_em ? formatDate(s.aprovado_em) : '___ / ___ / ______'}</td>
       </tr>
-    </table>
-  </body></html>`)
+    </table>`
+  return { css, corpo }
+}
+
+async function imprimirSolicitacao() {
+  const s = _solAtual
+  if (!s) return
+  const doc = await _solicitacaoDocumento(s)
+  const w = window.open('', '_blank')
+  if (!w) { toast('Permita pop-ups para imprimir.', 'warning'); return }
+  w.document.write(`<html><head><title>Solicitação ${s.protocolo}</title><style>${doc.css('body')}</style></head><body>${doc.corpo}</body></html>`)
   w.document.close()
   w.focus()
   setTimeout(() => w.print(), 300)
+}
+
+// PDF da solicitação — disponível só depois das duas assinaturas (gestor + ADM/Diretoria).
+// Usa o mesmo html2pdf já usado pelos documentos do RH.
+async function pdfSolicitacao(modo) {
+  const s = _solAtual
+  if (!s) return
+  if (!_solConcluida(s)) { toast('O PDF fica disponível depois das assinaturas do gestor e da ADM/Diretoria.', 'warning'); return }
+  if (typeof html2pdf === 'undefined') { toast('Biblioteca de PDF não carregou. Recarregue a página e tente de novo.', 'error'); return }
+  let win = null
+  if (modo === 'ver') {
+    win = window.open('', '_blank')
+    if (!win) { toast('Permita pop-ups para visualizar o PDF.', 'warning'); return }
+    win.document.write('<p style="font-family:Arial,sans-serif;padding:24px;color:#456;">Gerando PDF da solicitação...</p>')
+  }
+  const wrap = document.createElement('div')
+  try {
+    toast('Gerando PDF da solicitação...', 'info')
+    const doc = await _solicitacaoDocumento(s)
+    wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:760px;background:#fff'
+    wrap.innerHTML = '<style>' + doc.css('#solpdf') + '</style><div id="solpdf">' + doc.corpo + '</div>'
+    document.body.appendChild(wrap)
+    const opt = {
+      margin: [8, 8, 8, 8],
+      image: { type: 'jpeg', quality: 0.96 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'], avoid: 'tr' },
+    }
+    const blob = await html2pdf().set(opt).from(wrap.querySelector('#solpdf')).outputPdf('blob')
+    const url = URL.createObjectURL(blob)
+    const nomeArq = 'Solicitacao_' + String(s.protocolo || s.id).replace(/[^\w-]/g, '_') + '.pdf'
+    if (modo === 'ver') {
+      win.location.href = url
+    } else {
+      const a = document.createElement('a')
+      a.href = url; a.download = nomeArq
+      document.body.appendChild(a); a.click(); a.remove()
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 120000)
+    logTimelineSol(s.id, 'pdf_gerado', 'PDF da solicitação ' + (modo === 'ver' ? 'visualizado' : 'baixado'), s.convite_id)
+  } catch (e) {
+    console.error('pdfSolicitacao:', e)
+    if (win) win.close()
+    toast('Erro ao gerar o PDF: ' + (e.message || e), 'error')
+  } finally {
+    if (wrap.parentNode) wrap.parentNode.removeChild(wrap)
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -3655,7 +3957,7 @@ async function renderCertificados() {
   + '<div class="slide-up">'
   +   '<div class="tabs" id="cert-tabs">'
   +     '<button class="tab-btn active" data-tab="vencimentos">Vencimentos</button>'
-  +     '<button class="tab-btn" data-tab="lote">Emitir em lote</button>'
+  +     '<button class="tab-btn" data-tab="lote">Treinamentos</button>'
   +     '<button class="tab-btn" data-tab="importar">Importar planilha</button>'
   +     '<button class="tab-btn" data-tab="funcoesos">Funções (O.S.)</button>'
   +     '<button class="tab-btn" data-tab="listas">Listas</button>'
@@ -4040,10 +4342,12 @@ async function _paneLote() {
   const nrs = (APP._nrs || []).filter(n => n.ativo !== false)
   const ins = (APP._instrutores || []).filter(i => i.ativo !== false)
 
+  const box = 'border:1px solid var(--gray200);border-radius:var(--radius);padding:12px 14px;background:var(--white);'
+  const boxTit = 'font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:8px;'
   pane.innerHTML = ''
-  + '<div class="card"><div class="card-header"><h3>Emitir certificados para uma turma</h3></div><div class="card-body">'
-  +   '<p style="font-size:12.5px;color:var(--gray500);margin-bottom:14px;">Selecione as pessoas e as normas: o sistema gera todos os certificados '
-  +   'numa única janela, prontos para imprimir ou salvar de uma vez.</p>'
+  + '<div class="card"><div class="card-header"><h3>Treinamentos e documentos da turma</h3></div><div class="card-body">'
+  +   '<p style="font-size:12.5px;color:var(--gray500);margin-bottom:14px;">Marque os treinamentos realizados (cada um com a sua data), '
+  +   'escolha os documentos que serão emitidos e selecione os colaboradores. Só é gerado o que estiver marcado.</p>'
   +   '<div class="input-group">'
   +     '<div class="field"><label>Instrutor *</label><select id="lote-instrutor" class="no-upper">'
   +       (ins.length ? ins.map(i => '<option value="' + esc(i.id) + '">' + esc(i.nome) + '</option>').join('')
@@ -4052,22 +4356,41 @@ async function _paneLote() {
   +     '<div class="field"><label>Tipo</label><select id="lote-tipo" class="no-upper">'
   +       '<option value="inicial"' + (pre.tipo === 'periodico' ? '' : ' selected') + '>Inicial</option>'
   +       '<option value="periodico"' + (pre.tipo === 'periodico' ? ' selected' : '') + '>Periódico</option></select></div>'
-  +     '<div class="field"><label>Data do treinamento *</label><input type="date" id="lote-data" value="' + hoje + '"></div>'
   +   '</div>'
-  +   '<div class="section-label">🎓 Certificados por norma</div>'
-  +   '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">'
-  +     nrs.filter(n => !n.soLista).map(n => _chipNorma('lote-nr', n, pre.nrIds.includes(n.id), ' onchange="sincLista(this)"')).join('')
+  // ── TREINAMENTOS = conteúdo realizado (data individual por norma) ──
+  +   '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;">'
+  +     '<div class="section-label" style="margin:0;">🎓 Treinamentos realizados</div>'
+  +     '<button type="button" class="btn btn-outline btn-sm" id="lote-trein-todos" onclick="selecionarTodosTreinLote()">Selecionar todos</button>'
   +   '</div>'
-  +   '<div class="section-label">✍️ Listas de presença por norma</div>'
-  +   '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">'
-  +     nrs.map(n => _chipNorma('lote-lst', n, pre.nrIds.includes(n.id), '')).join('')
+  +   '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px;">'
+  +     nrs.map(n => _linhaTreinLote(n, pre.nrIds.includes(n.id))).join('')
   +   '</div>'
-  +   '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">'
-  +     '<span style="font-size:11.5px;color:var(--gray500);">Modelo:</span>' + _chipsListas('lote')
+  // ── DOCUMENTOS = o que será gerado ──
+  +   '<div class="section-label">📄 Documentos a emitir</div>'
+  +   '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:18px;">'
+  +     '<div style="' + box + '"><div style="' + boxTit + '">Certificados</div>'
+  +       '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+  +         (nrs.filter(n => !n.soLista).map(n => _chipNorma('lote-nr', n, pre.nrIds.includes(n.id), ' onchange="sincLista(this)"')).join('')
+             || '<span style="font-size:12px;color:var(--gray500);">Nenhuma norma com certificado.</span>')
+  +       '</div></div>'
+  +     '<div style="' + box + '"><div style="' + boxTit + '">Listas de presença</div>'
+  +       '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">'
+  +         nrs.map(n => _chipNorma('lote-lst', n, pre.nrIds.includes(n.id), '')).join('')
+  +       '</div>'
+  +       '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">'
+  +         '<span style="font-size:11.5px;color:var(--gray500);">Modelo:</span>' + _chipsListas('lote')
+  +       '</div></div>'
+  +     '<div style="' + box + '"><div style="' + boxTit + '">Ordem de Serviço</div>'
+  +       '<label class="checkbox-field" style="margin-bottom:8px;"><input type="checkbox" id="lote-os-emitir" onchange="toggleOSLote()">'
+  +         '<span><b>Emitir O.S.</b> para os colaboradores selecionados</span></label>'
+  +       '<div id="lote-os-opcoes" style="display:none;">'
+  +         '<div class="field" style="margin-bottom:8px;"><label>Data da O.S. *</label><input type="date" id="lote-os-data" value="' + hoje + '"></div>'
+  +         '<div style="font-size:11.5px;color:var(--gray500);margin-bottom:6px;">Funções dos selecionados (vêm do cadastro de cada um):</div>'
+  +         '<div id="lote-os-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>'
+  +       '</div></div>'
   +   '</div>'
-  +   '<div class="section-label">📋 Ordem de Serviço <span style="color:var(--gray400);font-weight:400;text-transform:none;letter-spacing:0;">— o sistema lê a função de cada selecionado</span></div>'
-  +   '<div id="lote-os-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;"></div>'
-  +   '<div class="section-label">Colaboradores <span id="lote-contador" style="color:var(--teal-d);"></span></div>'
+  // ── COLABORADORES ──
+  +   '<div class="section-label">👷 Colaboradores <span id="lote-contador" style="color:var(--teal-d);"></span></div>'
   +   '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">'
   +     '<input type="text" id="lote-busca" class="no-upper" placeholder="🔎 Buscar por nome ou CPF..." oninput="filtrarLote()" '
   +       'style="flex:1;min-width:180px;font-size:13px;padding:8px 11px;border:1px solid var(--gray200);border-radius:var(--radius-sm);">'
@@ -4077,9 +4400,65 @@ async function _paneLote() {
   +   '</div>'
   +   '<div id="lote-lista" style="min-height:120px;max-height:340px;overflow:auto;border:1px solid var(--gray200);border-radius:var(--radius-sm);padding:4px;background:var(--gray50);"></div>'
   +   '<p style="font-size:11.5px;color:var(--gray500);margin-top:10px;">Certificado (paisagem), O.S. e lista (retrato) abrem em janelas separadas — cada uma imprime na orientação certa.</p>'
-  +   '<button class="btn btn-primary" style="margin-top:6px;" onclick="gerarLoteCertificados()">🎓 Gerar documentos da turma</button>'
+  +   '<button class="btn btn-primary" style="margin-top:6px;" onclick="gerarLoteCertificados()">📄 Gerar documentos selecionados</button>'
   + '</div></div>'
+  _sincDocsTreinLote()
   filtrarLote(pre.colabIds)
+}
+
+// Linha de treinamento: marcar + data individual da norma
+function _linhaTreinLote(n, marcado) {
+  return '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--gray200);border-radius:var(--radius-sm);padding:7px 10px;background:var(--white);">'
+    + '<label style="display:flex;align-items:center;gap:9px;flex:1;min-width:200px;cursor:pointer;">'
+    +   '<input type="checkbox" class="lote-trein" value="' + esc(n.id) + '"' + (marcado ? ' checked' : '') + ' onchange="toggleTreinLote(this)">'
+    +   '<span style="font-size:13px;font-weight:700;color:var(--navy);flex:none;">' + (n.soLista ? esc(n.codigo) : 'NR-' + esc(n.codigo)) + '</span>'
+    +   '<span style="font-size:11.5px;color:var(--gray500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">' + esc(n.titulo) + '</span>'
+    + '</label>'
+    + '<span style="display:flex;align-items:center;gap:6px;flex:none;">'
+    +   '<span style="font-size:11.5px;color:var(--gray500);">Data</span>'
+    +   '<input type="date" class="lote-trein-data" data-nr="' + esc(n.id) + '"' + (marcado ? '' : ' disabled') + ' style="width:150px;font-size:12.5px;padding:6px 8px;">'
+    + '</span>'
+    + '</div>'
+}
+function _docsDaNorma(id) {
+  return ['lote-nr', 'lote-lst'].map(cls => document.querySelector('.' + cls + '[value="' + CSS.escape(id) + '"]')).filter(Boolean)
+}
+// Documento só pode ser marcado se o treinamento da norma estiver marcado
+function _sincDocsTreinLote() {
+  document.querySelectorAll('.lote-trein').forEach(t => {
+    _docsDaNorma(t.value).forEach(chk => {
+      chk.disabled = !t.checked
+      if (!t.checked) chk.checked = false
+      const lab = chk.closest('label'); if (lab) lab.style.opacity = t.checked ? '' : '.45'
+    })
+  })
+  _atualizarBotaoTodosTrein()
+}
+// Marcar o treinamento já sugere o certificado e a lista dele; desmarcar tira os dois
+function toggleTreinLote(el) {
+  const on = el.checked
+  const data = document.querySelector('.lote-trein-data[data-nr="' + CSS.escape(el.value) + '"]')
+  if (data) { data.disabled = !on; if (!on) data.value = '' }
+  _docsDaNorma(el.value).forEach(chk => {
+    chk.disabled = !on
+    chk.checked = on
+    const lab = chk.closest('label'); if (lab) lab.style.opacity = on ? '' : '.45'
+  })
+  _atualizarBotaoTodosTrein()
+}
+function selecionarTodosTreinLote() {
+  const todos = Array.from(document.querySelectorAll('.lote-trein'))
+  const marcar = todos.some(t => !t.checked)
+  todos.forEach(t => { if (t.checked !== marcar) { t.checked = marcar; toggleTreinLote(t) } })
+}
+function _atualizarBotaoTodosTrein() {
+  const b = document.getElementById('lote-trein-todos'); if (!b) return
+  const todos = Array.from(document.querySelectorAll('.lote-trein'))
+  b.textContent = todos.length && todos.every(t => t.checked) ? 'Desmarcar todos' : 'Selecionar todos'
+}
+function toggleOSLote() {
+  const on = !!document.getElementById('lote-os-emitir')?.checked
+  const box = document.getElementById('lote-os-opcoes'); if (box) box.style.display = on ? '' : 'none'
 }
 
 function filtrarLote(preSel) {
@@ -4106,8 +4485,10 @@ function filtrarLote(preSel) {
     +     '<span style="flex:1;min-width:0;">'
     +       '<span style="display:block;font-size:12.5px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
     +         esc(c.nome_completo || '(sem nome — cadastro incompleto)') + '</span>'
+    +       '<span style="display:block;font-size:11.5px;font-weight:600;color:var(--gray700);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
+    +         (c.funcao ? esc(c.funcao) : 'função não informada') + '</span>'
     +       '<span style="display:block;font-size:11px;color:var(--gray500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
-    +         (c.funcao ? esc(c.funcao) : 'função não informada') + (c.unidade ? ' · ' + esc(c.unidade) : '') + ' · ' + formatCPF(c.cpf) + '</span>'
+    +         (c.unidade ? esc(c.unidade) + ' · ' : '') + formatCPF(c.cpf) + '</span>'
     +     '</span>'
     +     (dup ? '<span class="chip" style="flex:none;font-size:9px;background:var(--warn-l);color:#854D0E;">repetido</span>' : '')
     +   '</label>'
@@ -4188,16 +4569,27 @@ function _renderChipsOS() {
 
 function gerarLoteCertificados() {
   const ids = Array.from(document.querySelectorAll('.lote-colab:checked')).map(e => e.value)
-  const nrIds = Array.from(document.querySelectorAll('.lote-nr:checked')).map(e => e.value)
-  const lstIds = Array.from(document.querySelectorAll('.lote-lst:checked')).map(e => e.value)
-  const osFuncoes = Array.from(document.querySelectorAll('.lote-osf:checked')).map(e => e.value)
+  // data individual de cada treinamento marcado
+  const datas = {}
+  document.querySelectorAll('.lote-trein:checked').forEach(e => {
+    const inp = document.querySelector('.lote-trein-data[data-nr="' + CSS.escape(e.value) + '"]')
+    datas[e.value] = inp ? inp.value : ''
+  })
+  const nrIds = Array.from(document.querySelectorAll('.lote-nr:checked')).map(e => e.value).filter(id => id in datas)
+  const lstIds = Array.from(document.querySelectorAll('.lote-lst:checked')).map(e => e.value).filter(id => id in datas)
+  const emitirOS = !!document.getElementById('lote-os-emitir')?.checked
+  const osFuncoes = emitirOS ? Array.from(document.querySelectorAll('.lote-osf:checked')).map(e => e.value) : []
   if (!ids.length) { toast('Selecione ao menos um colaborador.', 'warning'); return }
-  if (!nrIds.length && !lstIds.length && !osFuncoes.length) {
-    toast('Escolha ao menos um certificado, uma lista ou uma Ordem de Serviço.', 'warning'); return
+  if (!nrIds.length && !lstIds.length && !emitirOS) {
+    toast('Marque ao menos um documento: certificado, lista de presença ou O.S.', 'warning'); return
   }
+  const rotuloNR = id => { const n = (APP._nrs || []).find(x => x.id === id); return n ? (n.soLista ? n.codigo : 'NR-' + n.codigo) : id }
+  const semData = Array.from(new Set(nrIds.concat(lstIds))).filter(id => !datas[id])
+  if (semData.length) { toast('Informe a data do treinamento: ' + semData.map(rotuloNR).join(', ') + '.', 'warning'); return }
   if (lstIds.length && !_formatosMarcados('lote').length) { toast('Escolha o modelo da lista (Registro ou Folha).', 'warning'); return }
-  const data = document.getElementById('lote-data').value
-  if (!data) { toast('Informe a data do treinamento.', 'warning'); return }
+  if (emitirOS && !osFuncoes.length) { toast('Nenhuma função com perfil de O.S. está marcada para os colaboradores selecionados.', 'warning'); return }
+  const osData = emitirOS ? ((document.getElementById('lote-os-data') || {}).value || '') : ''
+  if (emitirOS && !osData) { toast('Informe a data da O.S.', 'warning'); return }
   const insId = document.getElementById('lote-instrutor').value
   const instrutor = (APP._instrutores || []).find(i => i.id === insId)
   if (!instrutor) { toast('Cadastre um instrutor antes de emitir.', 'warning'); return }
@@ -4210,11 +4602,12 @@ function gerarLoteCertificados() {
   const turma = []
   ids.forEach(cid => {
     const c = (APP._loteColabs || []).find(x => x.id === cid); if (!c) return
-    const dados = { nome: c.nome_completo || '', rg: c.rg || '—', data, tipo, instrutor,
-                    sexo: (c.sexo || '').toUpperCase(), colabId: c.id, conviteId: c.convite_id }
-    turma.push({ nome: dados.nome, funcao: c.funcao || '', local: c.unidade || '', colabId: c.id, conviteId: c.convite_id })
+    const base = { nome: c.nome_completo || '', rg: c.rg || '—', tipo, instrutor,
+                   sexo: (c.sexo || '').toUpperCase(), colabId: c.id, conviteId: c.convite_id }
+    turma.push({ nome: base.nome, funcao: c.funcao || '', local: c.unidade || '', colabId: c.id, conviteId: c.convite_id })
     nrIds.forEach(nid => {
       const nr = (APP._nrs || []).find(n => n.id === nid); if (!nr || nr.soLista) return
+      const dados = Object.assign({}, base, { data: datas[nid] })
       paginas += _certPagina(nr, dados)
       regs.push(_regTreinamento(nr, dados, c.cpf))
     })
@@ -4228,14 +4621,23 @@ function gerarLoteCertificados() {
     emitidos = regs.length
     registrarTreinamentos(regs)
   }
-  toast(emitidos ? emitidos + ' certificado(s) gerado(s).' : 'Nenhum certificado — só lista de presença.', 'success')
 
-  emitirListas(lstIds, { data, dataFim: data, tipo, instrutor }, turma, _formatosMarcados('lote'))
+  if (lstIds.length) {
+    const d0 = datas[lstIds[0]]
+    emitirListas(lstIds, { data: d0, dataFim: d0, tipo, instrutor, datasPorNR: datas }, turma, _formatosMarcados('lote'))
+  }
 
+  let osPessoas = 0
   if (osFuncoes.length) {
     const alvo = turma.filter(p => osFuncoes.includes((p.funcao || '').trim() || '— sem função no convite'))
-    if (alvo.length) carregarCfgOS().then(() => _osEmLote(alvo, { data, responsavel: instrutor }))
+    osPessoas = alvo.length
+    if (alvo.length) carregarCfgOS().then(() => _osEmLote(alvo, { data: osData, responsavel: instrutor }))
   }
+  const partes = []
+  if (emitidos) partes.push(emitidos + ' certificado(s)')
+  if (lstIds.length) partes.push('lista(s) de ' + lstIds.length + ' treinamento(s)')
+  if (osPessoas) partes.push(osPessoas + ' O.S.')
+  toast(partes.length ? 'Gerado: ' + partes.join(' · ') + '.' : 'Nada para gerar com a seleção atual.', partes.length ? 'success' : 'warning')
 }
 
 function _regTreinamento(nr, dados, cpf) {
@@ -4997,8 +5399,11 @@ async function emitirListas(nrIds, dados, pessoas, formatos) {
   if (formatos.includes('folha') && !APP._folhaTextos) APP._folhaTextos = await cfgGet('folha_textos', FOLHA_DEFAULT)
   let paginas = ''
   nrs.forEach(nr => {
-    if (formatos.includes('registro')) paginas += _listaDeUmaNR(nr, dados, pessoas)
-    if (formatos.includes('folha'))    paginas += _folhaDeUmaNR(nr, dados, pessoas)
+    const dNR = dados.datasPorNR && dados.datasPorNR[nr.id]
+      ? Object.assign({}, dados, { data: dados.datasPorNR[nr.id], dataFim: dados.datasPorNR[nr.id] })
+      : dados
+    if (formatos.includes('registro')) paginas += _listaDeUmaNR(nr, dNR, pessoas)
+    if (formatos.includes('folha'))    paginas += _folhaDeUmaNR(nr, dNR, pessoas)
   })
   const w = window.open('', '_blank')
   if (!w) { toast('Permita pop-ups para gerar as listas de presença.', 'warning'); return }
@@ -5141,6 +5546,21 @@ async function abrirDetalheAdmissao(id) {
     const { data: convite } = await sb.from('convites').select('*').eq('id',id).single()
     const { data: colab } = await sb.from('colaboradores').select('*, dependentes(*), documentos(*)').eq('convite_id',id).maybeSingle()
     APP._detalheAtual = { convite, colab }
+    // V14: CPF já presente em outro processo? (só alerta — não bloqueia)
+    let dupCpf = []
+    if (colab?.cpf) {
+      try {
+        const dig = String(colab.cpf).replace(/\D/g, '')
+        const variantes = Array.from(new Set([colab.cpf, dig, formatCPF(dig)]))
+        const { data: outros } = await sb.from('colaboradores').select('id, convite_id').in('cpf', variantes).neq('id', colab.id)
+        const cids = (outros || []).map(o => o.convite_id).filter(x => x && x !== id)
+        if (cids.length) {
+          const { data: convs } = await sb.from('convites').select('id, candidato_nome, funcao, status, created_at').in('id', cids).is('deleted_at', null)
+          dupCpf = convs || []
+        }
+      } catch (_) {}
+    }
+    APP._dupCpf = dupCpf
     const { data: timeline } = await sb.from('timeline').select('*').eq('convite_id',id).order('created_at',{ascending:false}).limit(10)
     const { data: obs } = await sb.from('observacoes').select('*').eq('convite_id',id).order('created_at',{ascending:false})
 
@@ -5153,6 +5573,14 @@ async function abrirDetalheAdmissao(id) {
       <button class="tab-btn" data-tab="obs">Observações (${obs?.length||0})</button>
     </div>
     <div id="tab-content-geral" class="tab-content">
+      ${dupCpf.length ? `<div class="alert alert-warning" style="margin-bottom:14px;flex-direction:column;gap:6px;">
+        <div><b>⚠️ Este CPF já possui um processo no RCONTRACT.</b></div>
+        ${dupCpf.map(p => `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;">
+          <span style="flex:1;min-width:160px;">${esc(p.candidato_nome)} — ${esc(p.funcao || '—')} · criado em ${formatDate(p.created_at)}</span>
+          ${statusBadge(p.status)}
+          <button class="btn btn-outline btn-sm" onclick="abrirDetalheAdmissao('${jsStr(p.id)}').catch(console.error)">Ver processo</button>
+        </div>`).join('')}
+      </div>` : ''}
       <div class="input-group">
         <div>
           <div class="section-label">Candidato</div>
@@ -5178,7 +5606,7 @@ async function abrirDetalheAdmissao(id) {
           <div style="margin-bottom:12px;">${statusBadge(convite.status)}</div>
           <select id="select-novo-status" class="filter-select" style="width:100%;">
             <option value="">Alterar status...</option>
-            ${['pendente','em_andamento','documentacao_incompleta','em_analise','completa','aprovada','reprovada','admitido','expirado'].map(s=>`<option value="${s}">${s.replace(/_/g,' ')}</option>`).join('')}
+            ${['pendente','em_andamento','documentacao_incompleta','em_analise','completa','aprovada','reprovada','admitido','expirado'].map(s=>`<option value="${s}">${(STATUS_CFG[s] || {}).label || s.replace(/_/g,' ')}</option>`).join('')}
           </select>
           <button class="btn btn-primary btn-sm" style="margin-top:8px;width:100%;justify-content:center;" onclick="alterarStatus('${convite.id}')">Atualizar Status</button>
         </div>
@@ -5285,6 +5713,14 @@ function renderDadosColab(c) {
       <div class="dado-item"><div class="dado-label">Reservista</div><div class="dado-val">${S(c.reservista)||'—'}</div></div>
     </div>
     <div class="section-label">Dados Bancários</div>
+    ${(() => {
+      const sit = _itauSituacao(c)
+      if (sit === 'carta') return `<div class="alert alert-warning" style="margin-bottom:10px;align-items:center;flex-wrap:wrap;">
+          <span>🏦</span><span style="flex:1;min-width:180px;"><b>CARTA DE ABERTURA SOLICITADA</b> — o candidato não possui conta Itaú.</span>
+          <button class="btn btn-outline btn-sm" onclick="gerarCartaItau()">🏦 Gerar Carta Itaú</button></div>`
+      if (sit === 'itau') return `<div class="alert alert-success" style="margin-bottom:10px;"><span>🏦</span><span><b>CONTA ITAÚ INFORMADA</b></span></div>`
+      return ''
+    })()}
     <div class="dados-grid" style="margin-bottom:16px;">
       <div class="dado-item"><div class="dado-label">Banco</div><div class="dado-val">${S(c.banco_nome)||'—'}</div></div>
       <div class="dado-item"><div class="dado-label">Agência</div><div class="dado-val">${S(c.agencia)||'—'}</div></div>
@@ -5355,7 +5791,7 @@ function renderDocumentosColab(docs, nomeColab) {
       return `<div class="doc-item ${cls}">
         <span class="doc-check">${icon}</span>
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:600;font-size:12px;">${t.label}</div>
+          <div style="font-weight:600;font-size:12px;">${t.label}${doc ? _tipoArquivoTag(doc) : ''}</div>
           ${doc
             ? `<div style="font-size:10px;color:var(--gray500);margin-top:1px;">${doc.status}${doc.motivo_reprovacao?' — '+doc.motivo_reprovacao:''}</div>`
             : '<div style="font-size:10px;color:var(--gray400);">Não enviado</div>'}
@@ -5378,6 +5814,8 @@ function renderDocumentosColab(docs, nomeColab) {
 async function alterarStatus(conviteId) {
   const novoStatus = document.getElementById('select-novo-status').value
   if (!novoStatus) { toast('Selecione um status.', 'warning'); return }
+  if ((APP._dupCpf || []).length && ['completa','aprovada','admitido'].includes(novoStatus) &&
+      !confirm('Este CPF já possui outro processo no RCONTRACT.\n\nDeseja mesmo marcar este processo como "' + ((STATUS_CFG[novoStatus] || {}).label || novoStatus) + '"?')) return
   const { error } = await sb.from('convites').update({ status: novoStatus }).eq('id', conviteId)
   if (error) { toast('Erro ao atualizar.', 'error'); return }
   logTimeline(conviteId, 'status_alterado', 'Status alterado para: '+novoStatus.replace(/_/g,' '))
@@ -5502,8 +5940,8 @@ async function renderExportacao() {
               <option value="">Todos</option>
               <option value="aprovada">Aprovados</option>
               <option value="admitido">Admitidos</option>
-              <option value="completa">Completos</option>
-              <option value="em_analise">Em Análise</option>
+              <option value="completa">Finalizados</option>
+              <option value="em_analise">Documentos em Análise</option>
             </select>
           </div>
           <div class="field">
@@ -6151,6 +6589,8 @@ function botoesNavegacao(numAtual, onAvancarFnName) {
       const fnName = onAvancarFnName.replace('()', '')
       if (typeof window[fnName] === 'function') {
         await window[fnName]()
+        // V14: se a etapa não avançou (erro de validação), o botão continua na tela — libera de novo
+        if (btn.isConnected) { btn.disabled = false; btn.textContent = labelOriginal }
       } else {
         throw new Error(`Função "${fnName}" não encontrada.`)
       }
@@ -6330,7 +6770,7 @@ function renderEtapa2(container) {
           <input type="tel" id="e2-wpp" value="${d.whatsapp||''}" placeholder="(11) 99999-9999">
         </div>
         <div class="field">
-          <label>E-mail *</label>
+          <label>E-mail pessoal *</label>
           <input type="email" id="e2-email" value="${d.email||APP.conviteAtual.candidato_email||''}" placeholder="seu@email.com">
         </div>
         ${botoesNavegacao(2, 'salvarEtapa2()')}
@@ -6348,7 +6788,7 @@ async function salvarEtapa2() {
   let errors = []
   ;['e2-tel','e2-email'].forEach(id => document.getElementById(id).classList.remove('error-field'))
   if (!tel || !validarTelefone(tel)) { document.getElementById('e2-tel').classList.add('error-field'); errors.push('Telefone válido') }
-  if (!email || !validarEmail(email)) { document.getElementById('e2-email').classList.add('error-field'); errors.push('E-mail válido') }
+  if (!email || !validarEmail(email)) { document.getElementById('e2-email').classList.add('error-field'); errors.push('E-mail pessoal válido') }
   if (errors.length > 0) { toast(`Preencha: ${errors.join(', ')}.`, 'error'); return }
   await autoSave({ telefone: tel, whatsapp: document.getElementById('e2-wpp').value, email, etapa_atual: 3 })
   renderEtapa(3)
@@ -6573,6 +7013,7 @@ const BANCOS = [
 
 function renderEtapa5(container) {
   const d = APP.dadosCandidato
+  const sitItau = _itauSituacao(d) === 'carta' ? 'nao' : (d.conta ? 'sim' : '')
   container.innerHTML = `
   <div class="form-container">
     <div style="margin-bottom:20px;">
@@ -6583,10 +7024,25 @@ function renderEtapa5(container) {
     <div class="card">
       <div class="card-body">
         <div class="field">
+          <label>Você possui conta no Banco Itaú? *</label>
+          <label class="checkbox-field" style="margin:6px 0 8px;">
+            <input type="radio" name="e5-itau" value="sim" ${sitItau==='sim'?'checked':''} onchange="toggleItauEtapa5()" style="accent-color:var(--teal);margin-top:3px;">
+            <span>Sim, possuo conta Itaú</span>
+          </label>
+          <label class="checkbox-field">
+            <input type="radio" name="e5-itau" value="nao" ${sitItau==='nao'?'checked':''} onchange="toggleItauEtapa5()" style="accent-color:var(--teal);margin-top:3px;">
+            <span>Não possuo e desejo uma Carta de Abertura de Conta</span>
+          </label>
+        </div>
+        <div id="e5-carta-info" class="alert alert-info" style="margin-bottom:12px;${sitItau==='nao'?'':'display:none;'}">
+          <span>ℹ️</span><span>O RH vai emitir a Carta de Abertura de Conta no Itaú para você. Não é preciso informar agência e conta agora.</span>
+        </div>
+        <div id="e5-campos" style="${sitItau==='sim'?'':'display:none;'}">
+        <div class="field">
           <label>Banco *</label>
           <select id="e5-banco" onchange="selecionarBanco()">
             <option value="">Selecione o banco</option>
-            ${BANCOS.map(([cod,nome]) => `<option value="${cod}|${nome}" ${d.banco_codigo===cod?'selected':''}>${cod} — ${nome}</option>`).join('')}
+            ${BANCOS.map(([cod,nome]) => `<option value="${cod}|${nome}" ${(d.banco_codigo ? d.banco_codigo===cod : cod==='341')?'selected':''}>${cod} — ${nome}</option>`).join('')}
           </select>
         </div>
         <div class="input-group">
@@ -6608,10 +7064,17 @@ function renderEtapa5(container) {
             <option value="salario" ${d.conta_tipo==='salario'?'selected':''}>Conta Salário</option>
           </select>
         </div>
+        </div>
         ${botoesNavegacao(5, 'salvarEtapa5()')}
       </div>
     </div>
   </div>`
+}
+
+function toggleItauEtapa5() {
+  const v = document.querySelector('input[name="e5-itau"]:checked')?.value
+  document.getElementById('e5-campos').style.display = v === 'sim' ? '' : 'none'
+  document.getElementById('e5-carta-info').style.display = v === 'nao' ? '' : 'none'
 }
 
 function selecionarBanco() {
@@ -6619,6 +7082,14 @@ function selecionarBanco() {
 }
 
 async function salvarEtapa5() {
+  const itau = document.querySelector('input[name="e5-itau"]:checked')?.value
+  if (!itau) { toast('Informe se você possui conta no Banco Itaú.', 'error'); return }
+  if (itau === 'nao') {
+    // Carta de Abertura solicitada: registra Itaú (341) sem agência/conta — o painel identifica a solicitação
+    await autoSave({ banco_codigo: '341', banco_nome: 'Itaú Unibanco', agencia: '', conta: '', etapa_atual: 6 })
+    renderEtapa(6)
+    return
+  }
   const banco = document.getElementById('e5-banco').value
   const agencia = document.getElementById('e5-agencia').value.trim()
   const conta = document.getElementById('e5-conta').value.trim()
@@ -6857,6 +7328,13 @@ const DOC_TIPOS = {
   ],
 }
 
+const ACCEPT_DOCS = '.jpg,.jpeg,.pdf,.heic,.heif,.png,.webp,image/jpeg,image/heic,image/heif,image/png,image/webp,application/pdf'
+// Comprovante de conta Itaú deixa de ser obrigatório quando o candidato pediu Carta de Abertura
+function _docRequerido(t) {
+  if (t.key === 'cartao_banco' && _itauSituacao(APP.dadosCandidato) === 'carta') return false
+  return !!t.required
+}
+
 async function renderEtapa8(container) {
   // Documentos já vêm atualizados em APP.dadosCandidato.documentos via get_convite_by_token
   // (carga inicial) e via o retorno de salvar_documento (a cada upload). O candidato (anon)
@@ -6875,14 +7353,14 @@ async function renderEtapa8(container) {
         return `<div class="doc-item ${uploaded ? 'done' : ''}">
           <span class="doc-check">${uploaded ? '✓' : '○'}</span>
           <div style="flex:1;min-width:0;">
-            <div style="font-weight:600;font-size:12px;">${t.label} ${t.required ? '*' : ''}</div>
+            <div style="font-weight:600;font-size:12px;">${t.label} ${_docRequerido(t) ? '*' : ''}${t.key === 'cartao_banco' && !_docRequerido(t) ? '<span style="font-weight:400;color:var(--gray500);"> — não precisa: carta de abertura solicitada</span>' : ''}</div>
             ${uploaded
               ? `<div style="font-size:10px;color:${uploaded.status==='aprovado'?'var(--success)':uploaded.status==='reprovado'?'var(--error)':'var(--teal)'};">
                   ${uploaded.status==='aprovado'?'✅ Aprovado':uploaded.status==='reprovado'?'❌ Reprovado':'⏳ Aguardando revisão'}
                   ${uploaded.status==='reprovado' && uploaded.motivo_reprovacao ? `<span style="font-size:9px;display:block;margin-top:2px;">${uploaded.motivo_reprovacao}</span>` : ''}
                 </div>
-                ${uploaded.status==='reprovado' ? `<input type="file" id="reupload-${t.key}" accept="image/*,application/pdf" style="display:none" onchange="uploadDoc('${t.key}','${categ}',event)"><button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px;margin-top:3px;background:#FEE2E2;color:#991B1B;" onclick="document.getElementById('reupload-${t.key}').click()">↩ Reenviar</button>` : ''}`
-              : `<input type="file" id="upload-${t.key}" accept="image/*,application/pdf" style="display:none" onchange="uploadDoc('${t.key}', '${categ}', event)"><button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px;margin-top:3px;" onclick="document.getElementById('upload-${t.key}').click()">📎 Enviar</button>`}
+                ${uploaded.status==='reprovado' ? `<input type="file" id="reupload-${t.key}" accept="${ACCEPT_DOCS}" style="display:none" onchange="uploadDoc('${t.key}','${categ}',event)"><button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px;margin-top:3px;background:#FEE2E2;color:#991B1B;" onclick="document.getElementById('reupload-${t.key}').click()">↩ Reenviar</button>` : ''}`
+              : `<input type="file" id="upload-${t.key}" accept="${ACCEPT_DOCS}" style="display:none" onchange="uploadDoc('${t.key}', '${categ}', event)"><button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px;margin-top:3px;" onclick="document.getElementById('upload-${t.key}').click()">📎 Enviar</button>`}
           </div>
         </div>`
       }).join('')}
@@ -6890,8 +7368,8 @@ async function renderEtapa8(container) {
   </div>`
 
   // Contar obrigatórios enviados para mostrar progresso
-  const totalObrig = DOC_TIPOS.obrigatorios.filter(t => t.required).length
-  const enviadosObrig = DOC_TIPOS.obrigatorios.filter(t => t.required && uploadMap[t.key]).length
+  const totalObrig = DOC_TIPOS.obrigatorios.filter(t => _docRequerido(t)).length
+  const enviadosObrig = DOC_TIPOS.obrigatorios.filter(t => _docRequerido(t) && uploadMap[t.key]).length
   const pctDocs = Math.round((enviadosObrig / totalObrig) * 100)
 
   container.innerHTML = `
@@ -6899,7 +7377,7 @@ async function renderEtapa8(container) {
     <div style="margin-bottom:20px;">
       <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Etapa 8 de 8</div>
       <h2 style="font-size:20px;font-weight:700;color:var(--navy);">Envio de Documentos</h2>
-      <p style="font-size:13px;color:var(--gray500);">Envie os documentos em PDF, JPG ou PNG (máx. 20MB por arquivo).</p>
+      <p style="font-size:13px;color:var(--gray500);">Envie os documentos em JPG, JPEG ou PDF (máx. 20MB por arquivo). Fotos tiradas pelo celular são convertidas para JPG automaticamente.</p>
       <div style="margin-top:10px;background:var(--gray100);border-radius:99px;height:6px;overflow:hidden;">
         <div style="height:100%;background:${pctDocs === 100 ? 'var(--success)' : 'var(--teal)'};width:${pctDocs}%;border-radius:99px;transition:width .4s;"></div>
       </div>
@@ -6937,8 +7415,9 @@ function arquivoAceito(file) {
   const t = (file.type || '').toLowerCase()
   const nome = (file.name || '').toLowerCase()
   if (t === 'application/pdf' || /\.pdf$/.test(nome)) return true
-  if (t.startsWith('image/')) return true
-  return /\.(jpe?g|png|webp|heic|heif|gif|bmp|tiff?)$/.test(nome)
+  // JPG/JPEG diretos. HEIC/HEIF/PNG/WEBP (fotos de celular) são aceitos só porque são convertidos para JPG antes do envio.
+  if (['image/jpeg','image/jpg','image/pjpeg','image/heic','image/heif','image/png','image/webp'].includes(t)) return true
+  return /\.(jpe?g|png|webp|heic|heif)$/.test(nome)
 }
 
 // ── Compressão automática de imagens (converte HEIC/qualquer imagem para JPEG) ──
@@ -6946,9 +7425,9 @@ async function comprimirImagem(file, maxWidth = 1600, quality = 0.82) {
   const t = (file.type || '').toLowerCase()
   const nome = (file.name || '').toLowerCase()
   if (t === 'application/pdf' || /\.pdf$/.test(nome)) return file
-  const ehImagem = t.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif|gif|bmp|tiff?)$/.test(nome)
+  const ehImagem = t.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif)$/.test(nome)
   if (!ehImagem) return file
-  const webSafe = ['image/jpeg','image/jpg','image/png','image/webp'].includes(t)
+  const webSafe = ['image/jpeg','image/jpg','image/pjpeg'].includes(t) || (!t && /\.jpe?g$/.test(nome))
   return new Promise((resolve) => {
     const img = new Image()
     img.onload = () => {
@@ -6959,8 +7438,8 @@ async function comprimirImagem(file, maxWidth = 1600, quality = 0.82) {
       canvas.width = width || 1; canvas.height = height || 1
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
       canvas.toBlob(blob => {
-        // HEIC/formatos não web-safe: sempre usa o JPEG convertido (compatibilidade garantida).
-        // web-safe (JPG/PNG/WEBP): usa o JPEG só se ficou menor.
+        // V14: qualquer imagem que não seja JPEG (HEIC/PNG/WEBP) sempre vira JPEG.
+        // JPEG original: usa a versão recomprimida só se ficou menor.
         if (blob && (!webSafe || blob.size < file.size)) {
           resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }))
         } else { resolve(file) }
@@ -6974,7 +7453,14 @@ async function comprimirImagem(file, maxWidth = 1600, quality = 0.82) {
 async function uploadDoc(tipo, categoria, event) {
   const fileOrig = event.target.files[0]; if (!fileOrig) return
   if (fileOrig.size > 20 * 1024 * 1024) { toast('Arquivo muito grande (máx. 20MB).', 'error'); return }
-  if (!arquivoAceito(fileOrig)) { toast('Formato não aceito. Use foto do celular (JPG/PNG/HEIC) ou PDF.', 'error'); return }
+  if (!arquivoAceito(fileOrig)) { toast('Formato não aceito. Envie em JPG, JPEG ou PDF (foto do celular também serve).', 'error'); return }
+  // PDF: confere a assinatura do arquivo (%PDF-) para não aceitar outro formato renomeado
+  if (fileOrig.type === 'application/pdf' || /\.pdf$/i.test(fileOrig.name || '')) {
+    try {
+      const head = new Uint8Array(await fileOrig.slice(0, 5).arrayBuffer())
+      if (String.fromCharCode.apply(null, head) !== '%PDF-') { toast('Este arquivo não é um PDF válido.', 'error'); return }
+    } catch (_) { /* navegador sem suporte: segue com a validação por tipo */ }
+  }
   // Se o registro do colaborador ainda não existe (algum autosave anterior pode ter
   // falhado por rede instável), tenta criá-lo agora em vez de travar com uma mensagem
   // que o candidato não tem como resolver (ele já preencheu tudo).
@@ -6996,11 +7482,15 @@ async function uploadDoc(tipo, categoria, event) {
   try {
     const isPdf = fileOrig.type === 'application/pdf' || /\.pdf$/i.test(fileOrig.name || '')
     const file = isPdf ? fileOrig : await comprimirImagem(fileOrig)
+    // Só PDF ou JPEG chegam ao armazenamento (foto que o navegador não conseguiu converter é recusada)
+    const isJpeg = ['image/jpeg','image/jpg','image/pjpeg'].includes((file.type || '').toLowerCase()) || /\.jpe?g$/i.test(file.name || '')
+    if (!isPdf && !isJpeg) throw new Error('não foi possível converter esta foto para JPG. Envie a imagem em JPG ou o documento em PDF.')
+    const mime = isPdf ? 'application/pdf' : 'image/jpeg'
     const ext = isPdf ? 'pdf' : 'jpg'
     const path = `${APP.conviteAtual.id}/${tipo}_${Date.now()}.${ext}`
 
     await retryOp(async () => {
-      const { error } = await sb.storage.from('admissoes').upload(path, file, { upsert: true, contentType: file.type })
+      const { error } = await sb.storage.from('admissoes').upload(path, file, { upsert: true, contentType: mime })
       if (error) throw error
     })
 
@@ -7011,7 +7501,7 @@ async function uploadDoc(tipo, categoria, event) {
       p_categoria: categoria,
       p_nome: fileOrig.name,
       p_path: path,
-      p_mime: file.type,
+      p_mime: mime,
       p_tam: file.size,
     })
     if (docErr) throw docErr
@@ -7032,7 +7522,7 @@ async function finalizarAdmissao() {
     // Verificar se docs obrigatórios foram enviados — aviso não bloqueante
     const uploadedDocs = APP.dadosCandidato.documentos || []
     const uploadedKeys = new Set(uploadedDocs.map(d => d.tipo))
-    const faltando = DOC_TIPOS.obrigatorios.filter(t => t.required && !uploadedKeys.has(t.key)).map(t => t.label)
+    const faltando = DOC_TIPOS.obrigatorios.filter(t => _docRequerido(t) && !uploadedKeys.has(t.key)).map(t => t.label)
     if (faltando.length > 0) {
       const confirmar = confirm(`Atenção: os seguintes documentos obrigatórios não foram enviados:\n\n• ${faltando.join('\n• ')}\n\nDeseja finalizar mesmo assim?`)
       if (!confirmar) {
